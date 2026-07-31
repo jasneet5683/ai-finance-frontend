@@ -6,7 +6,10 @@
  * - Result formatting and display
  */
 
-const BASE_URL = "https://ai-financial-production.up.railway.app"; // Works for both local dev and Railway deployment
+const BASE_URL = "https://ai-financial-production.up.railway.app"; 
+let currentStockData = null;
+let currentStockAnalysis = null;
+
 
 // ---------- Tab Switching ----------
 document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -135,6 +138,12 @@ function renderStockAnalysis(data) {
 
     html += '</div>';
     showResult('stock', html);
+    currentStockData = data.stock_data;
+    currentStockAnalysis = data.analysis;
+    
+    // Show the chat container and clear old history
+    document.getElementById('stock-chat-container').classList.remove('hidden');
+    document.getElementById('stock-chat-history').innerHTML = '';
 }
 
 // ---------- Render Portfolio Analysis ----------
@@ -231,3 +240,49 @@ function formatValue(value) {
     }
     return value;
 }
+
+// ---------- Follow-up Chat ----------
+document.getElementById('ask-followup-btn').addEventListener('click', async () => {
+    const inputEl = document.getElementById('followup-question');
+    const question = inputEl.value.trim();
+    if (!question) return;
+
+    const historyBox = document.getElementById('stock-chat-history');
+    
+    // Append user's question to chat box
+    historyBox.innerHTML += `<div style="margin-bottom:10px;"><strong>You:</strong> ${question}</div>`;
+    inputEl.value = ''; // clear input
+    
+    document.getElementById('followup-loading').classList.remove('hidden');
+
+    try {
+        const response = await fetch(`${BASE_URL}/api/ask-stock-question`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                stock_data: currentStockData, 
+                analysis: currentStockAnalysis, 
+                question: question 
+            })
+        });
+
+        const result = await response.json();
+        document.getElementById('followup-loading').classList.add('hidden');
+
+        if (!response.ok) {
+            historyBox.innerHTML += `<div style="color:red;"><strong>Error:</strong> ${result.error}</div>`;
+            return;
+        }
+
+        // Convert newlines to <br> for HTML display
+        const formattedAnswer = result.answer.replace(/\n/g, '<br>');
+        historyBox.innerHTML += `<div style="margin-bottom:15px; color:#333;"><strong>AI:</strong> ${formattedAnswer}</div>`;
+        
+        // Scroll to bottom
+        historyBox.scrollTop = historyBox.scrollHeight;
+
+    } catch (error) {
+        document.getElementById('followup-loading').classList.add('hidden');
+        historyBox.innerHTML += `<div style="color:red;"><strong>Error:</strong> ${error.message}</div>`;
+    }
+});
