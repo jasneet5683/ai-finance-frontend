@@ -6,7 +6,7 @@
  * - Result formatting and display
  */
 
-const BASE_URL = window.location.origin; // Works for both local dev and Railway deployment
+const BASE_URL = "https://ai-financial-production.up.railway.app"; // Works for both local dev and Railway deployment
 
 // ---------- Tab Switching ----------
 document.querySelectorAll('.tab-btn').forEach(btn => {
