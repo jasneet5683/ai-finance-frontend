@@ -36,6 +36,21 @@
                 <div id="stock-loading" class="loading hidden">⏳ Fetching data and analysis...</div>
                 <div id="stock-error" class="error hidden"></div>
                 <div id="stock-result" class="result hidden"></div>
+                <!-- Existing result div -->
+<div id="stock-result" class="hidden"></div>
+
+<!-- NEW: Follow-up Chat Box (Hidden until analysis is done) -->
+<div id="stock-chat-container" class="hidden" style="margin-top: 20px; border-top: 2px solid #eee; padding-top: 20px;">
+    <h3>Ask a follow-up question about this stock</h3>
+    <div id="stock-chat-history" style="max-height: 200px; overflow-y: auto; margin-bottom: 15px; background: #f9f9f9; padding: 10px; border-radius: 5px;"></div>
+    
+    <div style="display: flex; gap: 10px;">
+        <input type="text" id="followup-question" placeholder="e.g., How will inflation affect this?" style="flex: 1; padding: 10px;">
+        <button id="ask-followup-btn" class="primary-btn">Ask</button>
+    </div>
+    <div id="followup-loading" class="hidden" style="color: #666; margin-top: 10px;">AI is thinking...</div>
+</div>
+
             </div>
         </section>
 
