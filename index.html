@@ -24,6 +24,15 @@
         <section id="stock-tab" class="tab-content active">
             <div class="panel">
                 <h2>Analyze a Stock</h2>
+                <!-- Add this above your ticker input box -->
+                    <div style="margin-bottom: 15px;">
+                            <label style="margin-right: 15px;">
+                            <input type="radio" name="asset_type" value="stock" checked> Stock
+                            </label>
+                        <label>
+                            <input type="radio" name="asset_type" value="fund"> Mutual Fund / ETF
+                        </label>
+                    </div>
                 <div class="input-group">
                     <input type="text" id="stock-symbol" placeholder="e.g., TCS, RELIANCE, INFY" />
                     <select id="stock-exchange">
