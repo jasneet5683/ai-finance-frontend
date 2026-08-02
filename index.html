@@ -23,42 +23,56 @@
         <!-- STOCK ANALYSIS TAB -->
         <section id="stock-tab" class="tab-content active">
             <div class="panel">
-                <h2>Analyze a Stock</h2>
-                <!-- Add this above your ticker input box -->
-                    <div style="margin-bottom: 15px;">
-                            <label style="margin-right: 15px;">
-                            <input type="radio" name="asset_type" value="stock" checked> Stock
-                            </label>
-                        <label>
-                            <input type="radio" name="asset_type" value="fund"> Mutual Fund / ETF
-                        </label>
-                    </div>
+                <h2>Analyze an Asset</h2>
+                
+                <!-- Radio Buttons for Stock vs Mutual Fund -->
+                <div style="margin-bottom: 15px;">
+                    <label style="margin-right: 15px; font-weight: bold; cursor: pointer;">
+                        <input type="radio" name="asset_type" value="stock" checked onchange="toggleHelpText()"> Stock
+                    </label>
+                    <label style="font-weight: bold; cursor: pointer;">
+                        <input type="radio" name="asset_type" value="fund" onchange="toggleHelpText()"> Mutual Fund / ETF
+                    </label>
+                </div>
+
                 <div class="input-group">
                     <input type="text" id="stock-symbol" placeholder="e.g., TCS, RELIANCE, INFY" />
                     <select id="stock-exchange">
-                        <option value="NSE">NSE</option>
-                        <option value="BSE">BSE</option>
+                        <option value="NSE">NSE (India)</option>
+                        <option value="BSE">BSE (India)</option>
+                        <option value="">US Market</option>
                     </select>
-                    <input type="text" id="stock-question" placeholder="Optional: Ask a specific question" />
-                    <button id="analyze-stock-btn" class="btn btn-primary">Analyze</button>
                 </div>
-                <div id="stock-loading" class="loading hidden">⏳ Fetching data and analysis...</div>
-                <div id="stock-error" class="error hidden"></div>
-                <div id="stock-result" class="result hidden"></div>
-                <!-- Existing result div -->
-<div id="stock-result" class="hidden"></div>
+                
+                <!-- Dynamic Help Text for Mutual Funds -->
+                <div id="fund-help-text" style="display: none; font-size: 0.85em; color: #666; margin-top: -10px; margin-bottom: 15px; padding: 10px; background: #f8f9fa; border-radius: 5px; border-left: 3px solid #007bff;">
+                    For Indian Mutual Funds, you must use the exact Yahoo Finance ticker.<br>
+                    Examples: <strong>0P0000YWL1.BO</strong> (Parag Parikh Flexi), <strong>0P0000XW8F.BO</strong> (Motilal Oswal Midcap).<br>
+                    <a href="https://finance.yahoo.com/mutualfunds/" target="_blank" style="color: #007bff; text-decoration: none; font-weight: bold; display: inline-block; margin-top: 5px;">🔍 Find your Mutual Fund ticker on Yahoo Finance</a>
+                </div>
 
-<!-- NEW: Follow-up Chat Box (Hidden until analysis is done) -->
-<div id="stock-chat-container" class="hidden" style="margin-top: 20px; border-top: 2px solid #eee; padding-top: 20px;">
-    <h3>Ask a follow-up question about this stock</h3>
-    <div id="stock-chat-history" style="max-height: 200px; overflow-y: auto; margin-bottom: 15px; background: #f9f9f9; padding: 10px; border-radius: 5px;"></div>
-    
-    <div style="display: flex; gap: 10px;">
-        <input type="text" id="followup-question" placeholder="e.g., How will inflation affect this?" style="flex: 1; padding: 10px;">
-        <button id="ask-followup-btn" class="primary-btn">Ask</button>
-    </div>
-    <div id="followup-loading" class="hidden" style="color: #666; margin-top: 10px;">AI is thinking...</div>
-</div>
+                <div class="input-group" style="margin-top: 15px;">
+                    <input type="text" id="stock-question" placeholder="Optional: Ask a specific question before analysis" />
+                    <button id="analyze-stock-btn" class="btn btn-primary" style="margin-top: 10px; width: 100%;">Analyze</button>
+                </div>
+
+                <div id="stock-loading" class="loading hidden" style="margin-top: 15px;">⏳ Fetching data and analysis...</div>
+                <div id="stock-error" class="error hidden" style="margin-top: 15px;"></div>
+                
+                <!-- Result div -->
+                <div id="stock-result" class="result hidden" style="margin-top: 20px;"></div>
+
+                <!-- NEW: Follow-up Chat Box (Hidden until analysis is done) -->
+                <div id="stock-chat-container" class="hidden" style="margin-top: 20px; border-top: 2px solid #eee; padding-top: 20px;">
+                    <h3>Ask a follow-up question about this asset</h3>
+                    <div id="stock-chat-history" style="max-height: 200px; overflow-y: auto; margin-bottom: 15px; background: #f9f9f9; padding: 10px; border-radius: 5px;"></div>
+                    
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="followup-question" placeholder="e.g., How will inflation affect this?" style="flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
+                        <button id="ask-followup-btn" class="btn btn-primary" style="padding: 10px 20px;">Ask</button>
+                    </div>
+                    <div id="followup-loading" class="hidden" style="color: #666; margin-top: 10px;">⏳ AI is thinking...</div>
+                </div>
 
             </div>
         </section>
@@ -68,16 +82,37 @@
             <div class="panel">
                 <h2>Analyze Your Portfolio</h2>
                 <div class="input-group">
-                    <input type="text" id="portfolio-question" placeholder="Optional: Ask about your portfolio strategy" />
-                    <button id="analyze-portfolio-btn" class="btn btn-primary">Analyze Portfolio</button>
+                    <input type="text" id="portfolio-question" placeholder="Optional: Ask about your portfolio strategy" style="width: 100%; margin-bottom: 10px;" />
+                    <button id="analyze-portfolio-btn" class="btn btn-primary" style="width: 100%;">Analyze Portfolio</button>
                 </div>
-                <div id="portfolio-loading" class="loading hidden">⏳ Fetching portfolio and analysis...</div>
-                <div id="portfolio-error" class="error hidden"></div>
-                <div id="portfolio-result" class="result hidden"></div>
+                <div id="portfolio-loading" class="loading hidden" style="margin-top: 15px;">⏳ Fetching portfolio and analysis...</div>
+                <div id="portfolio-error" class="error hidden" style="margin-top: 15px;"></div>
+                <div id="portfolio-result" class="result hidden" style="margin-top: 20px;"></div>
             </div>
         </section>
     </div>
 
     <script src="script.js"></script>
+
+    <!-- Script to toggle the UI based on Stock vs Fund selection -->
+    <script>
+        function toggleHelpText() {
+            const isFund = document.querySelector('input[name="asset_type"]:checked').value === 'fund';
+            
+            // Show/hide help text
+            document.getElementById('fund-help-text').style.display = isFund ? 'block' : 'none';
+            
+            // Show/hide the exchange dropdown (Funds usually require the user to type the .BO/.NS suffix directly in the ticker)
+            document.getElementById('stock-exchange').style.display = isFund ? 'none' : 'inline-block';
+            
+            // Update the placeholder to guide the user
+            const inputEl = document.getElementById('stock-symbol');
+            if (isFund) {
+                inputEl.placeholder = "Enter exact Mutual Fund ticker (e.g., 0P0000YWL1.BO)";
+            } else {
+                inputEl.placeholder = "e.g., TCS, RELIANCE, INFY";
+            }
+        }
+    </script>
 </body>
 </html>
