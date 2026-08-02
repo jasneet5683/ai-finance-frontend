@@ -4,6 +4,7 @@
  * - Tab switching
  * - API calls to backend
  * - Result formatting and display
+ * - Stock & Mutual Fund support
  */
 
 const BASE_URL = "https://ai-financial-production.up.railway.app"; 
@@ -26,33 +27,58 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     });
 });
 
-// ---------- Stock Analysis ----------
+// ---------- Stock & Mutual Fund Analysis ----------
 document.getElementById('analyze-stock-btn').addEventListener('click', async () => {
     const symbol = document.getElementById('stock-symbol').value.trim();
+    // Check if the user selected Stock or Mutual Fund
+    const assetTypeInput = document.querySelector('input[name="asset_type"]:checked');
+    const assetType = assetTypeInput ? assetTypeInput.value : 'stock'; 
     const exchange = document.getElementById('stock-exchange').value;
     const question = document.getElementById('stock-question').value.trim();
 
     if (!symbol) {
-        showError('stock', 'Please enter a stock symbol');
+        showError('stock', 'Please enter a symbol or ticker');
         return;
     }
 
     showLoading('stock');
     try {
-        const response = await fetch(`${BASE_URL}/api/analyze-stock`, {
+        // Choose the correct backend endpoint based on the radio button
+        const endpoint = assetType === 'stock' ? '/api/analyze-stock' : '/api/analyze-fund';
+        
+        // Note: The fund endpoint in app.py expects 'ticker' instead of 'symbol'
+        const payload = assetType === 'stock' 
+            ? { symbol, exchange, question: question || undefined }
+            : { ticker: symbol, question: question || undefined };
+
+        const response = await fetch(`${BASE_URL}${endpoint}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ symbol, exchange, question: question || undefined })
+            body: JSON.stringify(payload)
         });
 
         const data = await response.json();
 
         if (!response.ok) {
-            showError('stock', data.error || 'Failed to analyze stock');
+            showError('stock', data.error || `Failed to analyze ${assetType}`);
             return;
         }
 
-        renderStockAnalysis(data);
+        // Route to the correct render function
+        if (assetType === 'stock') {
+            renderStockAnalysis(data);
+        } else {
+            renderFundAnalysis(data);
+        }
+        
+        // Save globally for the follow-up chat
+        currentStockData = data.stock_data;
+        currentStockAnalysis = data.analysis;
+        
+        // Show the chat container and clear old history
+        document.getElementById('stock-chat-container').classList.remove('hidden');
+        document.getElementById('stock-chat-history').innerHTML = '';
+
     } catch (error) {
         showError('stock', `Error: ${error.message}`);
     }
@@ -92,7 +118,7 @@ function renderStockAnalysis(data) {
 
     // Stock metrics table
     html += '<table class="stock-data-table"><tr><th>Metric</th><th>Value</th></tr>';
-    html += `<tr><td>Current Price</td><td>${formatValue(stock_data.current_price)} ${stock_data.currency}</td></tr>`;
+    html += `<tr><td>Current Price</td><td>${formatValue(stock_data.current_price)} ${stock_data.currency || ''}</td></tr>`;
     html += `<tr><td>Day Change</td><td>${formatValue(stock_data.day_change_pct)}%</td></tr>`;
     html += `<tr><td>P/E Ratio</td><td>${formatValue(stock_data.pe_ratio)}</td></tr>`;
     html += `<tr><td>EPS</td><td>${formatValue(stock_data.eps)}</td></tr>`;
@@ -138,12 +164,68 @@ function renderStockAnalysis(data) {
 
     html += '</div>';
     showResult('stock', html);
-    currentStockData = data.stock_data;
-    currentStockAnalysis = data.analysis;
+}
+
+// ---------- Render Mutual Fund Analysis ----------
+function renderFundAnalysis(data) {
+    const { stock_data, analysis } = data;
+
+    let html = '<div class="analysis-card">';
+    html += `<h3>${stock_data.longName || stock_data.shortName || stock_data.symbol} (Mutual Fund/ETF)</h3>`;
+
+    // Fund metrics table
+    html += '<table class="stock-data-table"><tr><th>Metric</th><th>Value</th></tr>';
     
-    // Show the chat container and clear old history
-    document.getElementById('stock-chat-container').classList.remove('hidden');
-    document.getElementById('stock-chat-history').innerHTML = '';
+    // YFinance returns different keys for funds vs stocks
+    const currentPrice = stock_data.regularMarketPrice || stock_data.previousClose || stock_data.navPrice;
+    html += `<tr><td>Current Price / NAV</td><td>${formatValue(currentPrice)} ${stock_data.currency || 'USD'}</td></tr>`;
+    
+    const yieldPct = stock_data.yield ? (stock_data.yield * 100).toFixed(2) + '%' : 'N/A';
+    html += `<tr><td>Yield</td><td>${yieldPct}</td></tr>`;
+    
+    const ytdReturn = stock_data.ytdReturn ? (stock_data.ytdReturn * 100).toFixed(2) + '%' : 'N/A';
+    html += `<tr><td>YTD Return</td><td>${ytdReturn}</td></tr>`;
+    
+    html += `<tr><td>Total Assets</td><td>${formatValue(stock_data.totalAssets)}</td></tr>`;
+    html += '</table>';
+
+    // AI Analysis
+    if (analysis.error) {
+        html += `<div class="error">${analysis.error}</div>`;
+    } else {
+        html += `<div class="analysis-card"><strong>Summary:</strong><p>${analysis.summary}</p></div>`;
+        
+        if (analysis.fund_profile) {
+            html += `<div class="analysis-card"><strong>Fund Profile:</strong><ul>`;
+            html += `<li><strong>Category:</strong> ${analysis.fund_profile.category}</li>`;
+            html += `<li><strong>Expense Ratio:</strong> ${analysis.fund_profile.expense_ratio}</li>`;
+            html += `<li><strong>AUM Context:</strong> ${analysis.fund_profile.aum}</li>`;
+            html += `</ul></div>`;
+        }
+
+        html += `<div class="analysis-card"><strong>Top Holdings:</strong><p>${analysis.top_holdings}</p></div>`;
+
+        if (analysis.pros && analysis.pros.length) {
+            html += '<div class="analysis-card"><strong>Pros:</strong><ul>';
+            analysis.pros.forEach(pro => {
+                html += `<li>${pro}</li>`;
+            });
+            html += '</ul></div>';
+        }
+
+        if (analysis.cons && analysis.cons.length) {
+            html += '<div class="analysis-card"><strong>Cons:</strong><ul>';
+            analysis.cons.forEach(con => {
+                html += `<li>${con}</li>`;
+            });
+            html += '</ul></div>';
+        }
+
+        html += `<div class="recommendation">${analysis.verdict}</div>`;
+    }
+
+    html += '</div>';
+    showResult('stock', html); // Reusing the 'stock' container visually
 }
 
 // ---------- Render Portfolio Analysis ----------
