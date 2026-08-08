@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI Financial Advisor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <div class="container">
+
+    <!-- Header -->
+    <header>
+      <h1>📊 AI Financial Advisor</h1>
+      <p class="subtitle">Institutional-grade analysis powered by McKinsey & Bain principles</p>
+    </header>
+
+    <!-- Tabs Navigation -->
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="analyze-asset">
+        <span>📈 Analyze an Asset</span>
+      </button>
+      <button class="tab-btn" data-tab="analyze-portfolio">
+        <span>💼 Analyze Your Portfolio</span>
+      </button>
+    </div>
+
+    <!-- Tab: Analyze an Asset -->
+    <div class="tab-content active" id="analyze-asset">
+      <div class="panel">
+        <h2>Analyze an Asset</h2>
+
+        <!-- Asset Type Selector -->
+        <div class="asset-type-selector">
+          <input type="radio" name="asset_type" id="asset-stock" value="stock" checked />
+          <label for="asset-stock">📈 Stock</label>
+          <input type="radio" name="asset_type" id="asset-fund" value="fund" />
+          <label for="asset-fund">🏛️ Mutual Fund / ETF</label>
+        </div>
+
+        <!-- Input Group -->
+        <div class="input-group">
+          <input type="text" id="stock-symbol" placeholder="Symbol / Ticker (e.g. AAPL)" />
+          <select id="stock-exchange">
+            <option value="NSE">NSE</option>
+            <option value="BSE">BSE</option>
+            <option value="NYSE">NYSE</option>
+            <option value="NASDAQ">NASDAQ</option>
+          </select>
+          <input type="text" id="stock-question" placeholder="Ask a specific question (optional)" />
+          <button class="btn btn-primary" id="analyze-stock-btn">Analyze</button>
+        </div>
+
+        <!-- Loading -->
+        <div class="loading hidden" id="stock-loading">
+          Fetching data and analysis...
+        </div>
+
+        <!-- Error -->
+        <div class="error hidden" id="stock-error"></div>
+
+        <!-- Result -->
+        <div class="result hidden" id="stock-result"></div>
+
+        <!-- Follow-up Chat -->
+        <div class="hidden" id="stock-chat-container">
+          <h3>💬 Ask a follow-up question about this asset</h3>
+          <div class="input-group">
+            <input type="text" id="followup-question" placeholder="e.g. What are the main risks?" />
+            <button class="btn btn-primary" id="ask-followup-btn">Ask AI</button>
+          </div>
+          <div class="loading hidden" id="followup-loading">AI is thinking...</div>
+          <div id="stock-chat-history"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab: Analyze Your Portfolio -->
+    <div class="tab-content" id="analyze-portfolio">
+      <div class="panel">
+        <h2>Analyze Your Portfolio</h2>
+
+        <div class="input-group">
+          <input type="text" id="portfolio-question" placeholder="Ask about your portfolio (optional)" />
+          <button class="btn btn-primary" id="analyze-portfolio-btn">Analyze Portfolio</button>
+        </div>
+
+        <!-- Loading -->
+        <div class="loading hidden" id="portfolio-loading">
+          Fetching portfolio and analysis...
+        </div>
+
+        <!-- Error -->
+        <div class="error hidden" id="portfolio-error"></div>
+
+        <!-- Result -->
+        <div class="result hidden" id="portfolio-result"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
