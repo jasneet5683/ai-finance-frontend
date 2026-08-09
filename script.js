@@ -435,12 +435,24 @@ async function loadMarketMovers() {
         gainersContainer.innerHTML = '';
         losersContainer.innerHTML = '';
         
+        // Helper function to truncate long company names
+        const truncateName = (name) => name.length > 15 ? name.substring(0, 15) + '...' : name;
+        
         // Render Gainers
         if (data.gainers && data.gainers.length > 0) {
             data.gainers.forEach(stock => {
                 const btn = document.createElement('button');
                 btn.className = 'mover-btn gainer';
-                btn.innerHTML = `<strong>${stock.symbol}</strong> <span style="margin-left:5px;">+${stock.change_pct}</span>`;
+                
+                // Add title attribute so hovering shows full name if truncated
+                btn.title = stock.name; 
+                
+                btn.innerHTML = `
+                    <div style="display: flex; flex-direction: column; text-align: left;">
+                        <div><strong>${stock.symbol}</strong> <span style="margin-left:5px;">+${stock.change}%</span></div>
+                        <div style="font-size: 10px; color: #666; margin-top: 2px;">${truncateName(stock.name)}</div>
+                    </div>
+                `;
                 btn.onclick = () => triggerStockAnalysis(stock.symbol);
                 gainersContainer.appendChild(btn);
             });
@@ -451,7 +463,15 @@ async function loadMarketMovers() {
             data.losers.forEach(stock => {
                 const btn = document.createElement('button');
                 btn.className = 'mover-btn loser';
-                btn.innerHTML = `<strong>${stock.symbol}</strong> <span style="margin-left:5px;">${stock.change_pct}</span>`;
+                
+                btn.title = stock.name;
+                
+                btn.innerHTML = `
+                    <div style="display: flex; flex-direction: column; text-align: left;">
+                        <div><strong>${stock.symbol}</strong> <span style="margin-left:5px;">${stock.change}%</span></div>
+                        <div style="font-size: 10px; color: #666; margin-top: 2px;">${truncateName(stock.name)}</div>
+                    </div>
+                `;
                 btn.onclick = () => triggerStockAnalysis(stock.symbol);
                 losersContainer.appendChild(btn);
             });
@@ -462,7 +482,6 @@ async function loadMarketMovers() {
         document.getElementById('losers-list').innerHTML = '<span style="font-size: 12px; color: #666;">Unavailable</span>';
     }
 }
-
 
 // ---------- Follow-up Chat ----------
 document.getElementById('ask-followup-btn').addEventListener('click', async () => {
