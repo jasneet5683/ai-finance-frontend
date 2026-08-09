@@ -423,34 +423,51 @@ function triggerStockAnalysis(symbol) {
     document.getElementById('stock-loading').scrollIntoView({ behavior: 'smooth' });
 }
 
-// Fetch and render the gainers and losers
-async function loadMarketMovers() {
+// ==========================================
+// NEW: SECTOR MARKET SCANNER
+// ==========================================
+
+// Fetch and render gainers/losers for the selected sector
+async function loadSectorMovers(sector = 'NIFTY_50') {
     try {
-        const response = await fetch(`${BASE_URL}/api/market-movers`);
+        const response = await fetch(`${BASE_URL}/api/market-movers`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sector: sector })
+        });
+        
         const data = await response.json();
         
-        const gainersContainer = document.getElementById('gainers-list');
-        const losersContainer = document.getElementById('losers-list');
+        if (!response.ok) {
+            console.error("Failed to fetch sector data:", data);
+            document.getElementById('sector-gainers-list').innerHTML = '<span style="font-size: 12px; color: #666;">Error loading data</span>';
+            document.getElementById('sector-losers-list').innerHTML = '<span style="font-size: 12px; color: #666;">Error loading data</span>';
+            return;
+        }
+        
+        const gainersContainer = document.getElementById('sector-gainers-list');
+        const losersContainer = document.getElementById('sector-losers-list');
         
         gainersContainer.innerHTML = '';
         losersContainer.innerHTML = '';
         
         // Helper function to truncate long company names
-        const truncateName = (name) => name.length > 15 ? name.substring(0, 15) + '...' : name;
+        const truncateName = (name) => name.length > 18 ? name.substring(0, 18) + '...' : name;
         
         // Render Gainers
         if (data.gainers && data.gainers.length > 0) {
             data.gainers.forEach(stock => {
                 const btn = document.createElement('button');
-                btn.className = 'mover-btn gainer';
-                
-                // Add title attribute so hovering shows full name if truncated
-                btn.title = stock.name; 
+                btn.className = 'sector-mover-btn gainer';
+                btn.title = stock.name;
                 
                 btn.innerHTML = `
-                    <div style="display: flex; flex-direction: column; text-align: left;">
-                        <div><strong>${stock.symbol}</strong> <span style="margin-left:5px;">+${stock.change}%</span></div>
-                        <div style="font-size: 10px; color: #666; margin-top: 2px;">${truncateName(stock.name)}</div>
+                    <div style="display: flex; flex-direction: column; text-align: left; width: 100%;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <strong style="font-size: 12px;">${stock.symbol}</strong>
+                            <span style="font-weight: 600; color: #16a34a; font-size: 12px;">+${stock.change}%</span>
+                        </div>
+                        <div style="font-size: 10px; color: #666; margin-top: 3px;">${truncateName(stock.name)}</div>
                     </div>
                 `;
                 btn.onclick = () => triggerStockAnalysis(stock.symbol);
@@ -462,14 +479,16 @@ async function loadMarketMovers() {
         if (data.losers && data.losers.length > 0) {
             data.losers.forEach(stock => {
                 const btn = document.createElement('button');
-                btn.className = 'mover-btn loser';
-                
+                btn.className = 'sector-mover-btn loser';
                 btn.title = stock.name;
                 
                 btn.innerHTML = `
-                    <div style="display: flex; flex-direction: column; text-align: left;">
-                        <div><strong>${stock.symbol}</strong> <span style="margin-left:5px;">${stock.change}%</span></div>
-                        <div style="font-size: 10px; color: #666; margin-top: 2px;">${truncateName(stock.name)}</div>
+                    <div style="display: flex; flex-direction: column; text-align: left; width: 100%;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <strong style="font-size: 12px;">${stock.symbol}</strong>
+                            <span style="font-weight: 600; color: #dc2626; font-size: 12px;">${stock.change}%</span>
+                        </div>
+                        <div style="font-size: 10px; color: #666; margin-top: 3px;">${truncateName(stock.name)}</div>
                     </div>
                 `;
                 btn.onclick = () => triggerStockAnalysis(stock.symbol);
@@ -477,11 +496,18 @@ async function loadMarketMovers() {
             });
         }
     } catch (error) {
-        console.error("Failed to load market movers:", error);
-        document.getElementById('gainers-list').innerHTML = '<span style="font-size: 12px; color: #666;">Unavailable</span>';
-        document.getElementById('losers-list').innerHTML = '<span style="font-size: 12px; color: #666;">Unavailable</span>';
+        console.error("Failed to load sector movers:", error);
+        document.getElementById('sector-gainers-list').innerHTML = '<span style="font-size: 12px; color: #666;">Unavailable</span>';
+        document.getElementById('sector-losers-list').innerHTML = '<span style="font-size: 12px; color: #666;">Unavailable</span>';
     }
 }
+
+// Add event listener to sector dropdown
+document.getElementById('sector-select').addEventListener('change', (e) => {
+    loadSectorMovers(e.target.value);
+});
+
+
 
 // ---------- Follow-up Chat ----------
 document.getElementById('ask-followup-btn').addEventListener('click', async () => {
@@ -525,5 +551,6 @@ document.getElementById('ask-followup-btn').addEventListener('click', async () =
   }
 });
 
-// Run it immediately when the script loads
-loadMarketMovers();
+// Load NIFTY 50 on page load
+loadSectorMovers('NIFTY_50');
+
