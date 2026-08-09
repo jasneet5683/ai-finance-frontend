@@ -836,3 +836,33 @@ header h1 {
     font-weight: 600;
 }
 
+/* Sector Market Scanner Buttons */
+.sector-mover-btn {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    min-width: 120px;
+    text-align: left;
+}
+
+.sector-mover-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.sector-mover-btn.gainer:hover {
+    border-color: #16a34a;
+    background: #f0fdf4;
+}
+
+.sector-mover-btn.loser:hover {
+    border-color: #dc2626;
+    background: #fef2f2;
+}
+
