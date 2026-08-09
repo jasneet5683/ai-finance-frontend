@@ -395,6 +395,75 @@ function formatValue(value) {
   return value;
 }
 
+// ---------- Market Movers Ticker ----------
+
+// Helper function to trigger an analysis programmatically
+function triggerStockAnalysis(symbol) {
+    // 1. Switch to the Asset tab if we aren't there already
+    document.querySelector('[data-tab="analyze-asset"]').click();
+    
+    // 2. Select the "Stock" radio button
+    const stockRadio = document.getElementById('asset-stock');
+    stockRadio.checked = true;
+    
+    // If you have a toggleUI function, call it so the exchange dropdown appears
+    if (typeof toggleUI === 'function') {
+        toggleUI();
+    }
+    
+    // 3. Fill in the input fields
+    document.getElementById('stock-symbol').value = symbol;
+    document.getElementById('stock-exchange').value = 'NSE'; // Default to NSE
+    document.getElementById('stock-question').value = ''; // Clear question
+    
+    // 4. Click the analyze button!
+    document.getElementById('analyze-stock-btn').click();
+    
+    // 5. Scroll down to the loading indicator
+    document.getElementById('stock-loading').scrollIntoView({ behavior: 'smooth' });
+}
+
+// Fetch and render the gainers and losers
+async function loadMarketMovers() {
+    try {
+        const response = await fetch(`${BASE_URL}/api/market-movers`);
+        const data = await response.json();
+        
+        const gainersContainer = document.getElementById('gainers-list');
+        const losersContainer = document.getElementById('losers-list');
+        
+        gainersContainer.innerHTML = '';
+        losersContainer.innerHTML = '';
+        
+        // Render Gainers
+        if (data.gainers && data.gainers.length > 0) {
+            data.gainers.forEach(stock => {
+                const btn = document.createElement('button');
+                btn.className = 'mover-btn gainer';
+                btn.innerHTML = `<strong>${stock.symbol}</strong> <span style="margin-left:5px;">+${stock.change_pct}</span>`;
+                btn.onclick = () => triggerStockAnalysis(stock.symbol);
+                gainersContainer.appendChild(btn);
+            });
+        }
+        
+        // Render Losers
+        if (data.losers && data.losers.length > 0) {
+            data.losers.forEach(stock => {
+                const btn = document.createElement('button');
+                btn.className = 'mover-btn loser';
+                btn.innerHTML = `<strong>${stock.symbol}</strong> <span style="margin-left:5px;">${stock.change_pct}</span>`;
+                btn.onclick = () => triggerStockAnalysis(stock.symbol);
+                losersContainer.appendChild(btn);
+            });
+        }
+    } catch (error) {
+        console.error("Failed to load market movers:", error);
+        document.getElementById('gainers-list').innerHTML = '<span style="font-size: 12px; color: #666;">Unavailable</span>';
+        document.getElementById('losers-list').innerHTML = '<span style="font-size: 12px; color: #666;">Unavailable</span>';
+    }
+}
+
+
 // ---------- Follow-up Chat ----------
 document.getElementById('ask-followup-btn').addEventListener('click', async () => {
   const inputEl = document.getElementById('followup-question');
@@ -436,3 +505,6 @@ document.getElementById('ask-followup-btn').addEventListener('click', async () =
     historyBox.innerHTML += `<p><strong>Error:</strong> ${error.message}</p>`;
   }
 });
+
+// Run it immediately when the script loads
+loadMarketMovers();
