@@ -797,3 +797,42 @@ header h1 {
 ::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(to bottom, var(--primary-light), var(--accent));
 }
+
+/* Market Mover Buttons */
+.mover-btn {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+}
+
+.mover-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.mover-btn.gainer:hover {
+    border-color: #16a34a;
+    background: #f0fdf4;
+}
+
+.mover-btn.gainer span {
+    color: #16a34a;
+    font-weight: 600;
+}
+
+.mover-btn.loser:hover {
+    border-color: #dc2626;
+    background: #fef2f2;
+}
+
+.mover-btn.loser span {
+    color: #dc2626;
+    font-weight: 600;
+}
+
