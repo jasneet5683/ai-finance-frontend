@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI Financial Advisor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <div class="container">
+
+    <!-- Header -->
+    <header>
+      <h1>📊 AI Financial Advisor</h1>
+      <p class="subtitle">Institutional-grade analysis powered by McKinsey & Bain principles</p>
+    </header>
+
+    <!-- Sector Market Scanner -->
+    <div id="sector-scanner-container">
+      <div class="scanner-header">
+        <h2>📊 Sector Market Scanner</h2>
+        <select id="sector-select">
+          <option value="NIFTY_50">NIFTY 50</option>
+          <option value="PETRO">Petroleum & Energy</option>
+          <option value="PHARMA">Pharmaceuticals</option>
+          <option value="AI_TECH">AI & Tech</option>
+          <option value="GREEN_ENERGY">Green Energy</option>
+          <option value="FINANCE">Banking & Finance</option>
+          <option value="FINTECH">FinTech & Payments</option>
+        </select>
+      </div>
+      <div class="scanner-grid">
+        <div class="scanner-card gainers">
+          <h3>🔥 Top Gainers</h3>
+          <div id="sector-gainers-list">
+            <span class="scanner-loading">Loading...</span>
+          </div>
+        </div>
+        <div class="scanner-card losers">
+          <h3>🔻 Top Losers</h3>
+          <div id="sector-losers-list">
+            <span class="scanner-loading">Loading...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabs Navigation -->
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="analyze-asset">
+        <span>📈 Analyze an Asset</span>
+      </button>
+      <button class="tab-btn" data-tab="analyze-portfolio">
+        <span>💼 Analyze Your Portfolio</span>
+      </button>
+    </div>
+
+    <!-- Tab: Analyze an Asset -->
+    <div class="tab-content active" id="analyze-asset">
+      <div class="panel">
+        <h2>Analyze an Asset</h2>
+
+        <!-- Asset Type Selector -->
+        <div class="asset-type-selector">
+          <input type="radio" name="asset_type" id="asset-stock" value="stock" checked onchange="toggleUI()" />
+          <label for="asset-stock">📈 Stock</label>
+          <input type="radio" name="asset_type" id="asset-fund" value="fund" onchange="toggleUI()" />
+          <label for="asset-fund">🏛️ Mutual Fund / ETF</label>
+        </div>
+
+        <!-- Input Group -->
+        <div class="input-group">
+          <input type="text" id="stock-symbol" placeholder="Symbol / Ticker (e.g. RELIANCE, TCS)" />
+          <select id="stock-exchange">
+            <option value="NSE">NSE (India)</option>
+            <option value="BSE">BSE (India)</option>
+            <option value="NYSE">NYSE</option>
+            <option value="NASDAQ">NASDAQ</option>
+          </select>
+          <input type="text" id="stock-question" placeholder="Ask a specific question (optional)" />
+          <button class="btn btn-primary" id="analyze-stock-btn">Analyze</button>
+        </div>
+
+        <!-- Loading -->
+        <div class="loading hidden" id="stock-loading">⏳ Fetching data and analysis...</div>
+
+        <!-- Error -->
+        <div class="error hidden" id="stock-error"></div>
+
+        <!-- Chart Container -->
+        <div id="chart-container" class="hidden">
+          <canvas id="priceChart" height="100"></canvas>
+        </div>
+
+        <!-- Result -->
+        <div class="result hidden" id="stock-result"></div>
+
+        <!-- Follow-up Chat -->
+        <div class="hidden" id="stock-chat-container">
+          <h3>💬 Ask a follow-up question about this asset</h3>
+          <div id="stock-chat-history"></div>
+          <div class="input-group chat-input-row">
+            <input type="text" id="followup-question" placeholder="e.g. What are the main risks?" />
+            <button class="btn btn-primary" id="ask-followup-btn">Ask AI</button>
+          </div>
+          <div class="loading hidden" id="followup-loading">⏳ AI is thinking...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab: Analyze Your Portfolio -->
+    <div class="tab-content" id="analyze-portfolio">
+      <div class="panel">
+        <h2>Analyze Your Portfolio</h2>
+
+        <div class="input-group">
+          <input type="text" id="portfolio-question" placeholder="Ask about your portfolio (optional)" />
+          <button class="btn btn-primary" id="analyze-portfolio-btn">Analyze Portfolio</button>
+        </div>
+
+        <!-- Loading -->
+        <div class="loading hidden" id="portfolio-loading">⏳ Fetching portfolio and analysis...</div>
+
+        <!-- Error -->
+        <div class="error hidden" id="portfolio-error"></div>
+
+        <!-- Result -->
+        <div class="result hidden" id="portfolio-result"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="script.js"></script>
+  <script>
+    function toggleUI() {
+      const isFund = document.getElementById('asset-fund').checked;
+      const exchangeSelect = document.getElementById('stock-exchange');
+      const inputEl = document.getElementById('stock-symbol');
+      if (isFund) {
+        exchangeSelect.style.display = 'none';
+        inputEl.placeholder = "e.g., Parag Parikh Flexi, Quant Small Cap";
+      } else {
+        exchangeSelect.style.display = 'inline-block';
+        inputEl.placeholder = "Symbol / Ticker (e.g. RELIANCE, TCS)";
+      }
+    }
+    toggleUI();
+  </script>
+</body>
+</html>
