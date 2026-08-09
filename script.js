@@ -5,11 +5,13 @@
  * - API calls to backend
  * - Result formatting and display
  * - Stock & Mutual Fund support
+ * - Chart.js interactive graphs
  */
 
 const BASE_URL = "https://ai-financial-production.up.railway.app";
 let currentStockData = null;
 let currentStockAnalysis = null;
+let priceChartInstance = null; // Used to track and update the Chart.js instance
 
 // ---------- Tab Switching ----------
 document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -101,9 +103,74 @@ document.getElementById('analyze-portfolio-btn').addEventListener('click', async
   }
 });
 
+// ---------- Chart Drawing Function ----------
+function drawChart(chartData, assetName, currency) {
+    const container = document.getElementById('chart-container');
+    const ctx = document.getElementById('priceChart').getContext('2d');
+
+    // If there is no data, hide the chart container
+    if (!chartData || !chartData.prices || chartData.prices.length === 0) {
+        container.classList.add('hidden');
+        return;
+    }
+
+    container.classList.remove('hidden');
+
+    // Destroy the old chart if it exists so they don't overlap
+    if (priceChartInstance) {
+        priceChartInstance.destroy();
+    }
+
+    // Create the new beautiful line chart
+    priceChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: chartData.dates,
+            datasets: [{
+                label: `${assetName} Price (${currency || 'INR'})`,
+                data: chartData.prices,
+                borderColor: '#2563eb', // Professional blue
+                backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                borderWidth: 2,
+                pointRadius: 0, // Hides the dots to make the line smooth
+                pointHoverRadius: 5,
+                fill: true,
+                tension: 0.1 // Slight curve
+            }]
+        },
+        options: {
+            responsive: true,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            plugins: {
+                legend: { display: false }, // Hide legend to save space
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `Price: ${context.parsed.y.toFixed(2)} ${currency || ''}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    display: true,
+                    ticks: { maxTicksLimit: 6 } // Only show a few dates on the X axis
+                },
+                y: { display: true }
+            }
+        }
+    });
+}
+
 // ---------- Render Stock Analysis ----------
 function renderStockAnalysis(data) {
-  const { stock_data, analysis } = data;
+  const { stock_data, analysis, chart_data } = data;
+
+  // Draw the chart!
+  drawChart(chart_data, stock_data.company_name || stock_data.ticker, stock_data.currency);
 
   let html = '<div class="analysis-card">';
   html += `<h3>${stock_data.company_name || stock_data.ticker}</h3>`;
@@ -160,7 +227,10 @@ function renderStockAnalysis(data) {
 
 // ---------- Render Mutual Fund Analysis ----------
 function renderFundAnalysis(data) {
-  const { stock_data, analysis } = data;
+  const { stock_data, analysis, chart_data } = data;
+
+  // Draw the chart!
+  drawChart(chart_data, stock_data.longName || stock_data.symbol, stock_data.currency || 'INR');
 
   let html = '<div class="analysis-card">';
   html += `<h3>${stock_data.longName || stock_data.shortName || stock_data.symbol} (Mutual Fund/ETF)</h3>`;
@@ -170,187 +240,16 @@ function renderFundAnalysis(data) {
   html += '<tbody>';
 
   const currentPrice = stock_data.regularMarketPrice || stock_data.previousClose || stock_data.navPrice;
-  html += `<tr><td>Current Price / NAV</td><td>${formatValue(currentPrice)} ${stock_data.currency || 'USD'}</td></tr>`;
+  html += `<tr><td>Current Price / NAV</td><td>${formatValue(currentPrice)} ${stock_data.currency || 'INR'}</td></tr>`;
 
-  const yieldPct = stock_data.yield ? (stock_data.yield * 100).toFixed(2) + '%' : 'N/A';
-  html += `<tr><td>Yield</td><td>${yieldPct}</td></tr>`;
-
-  const ytdReturn = stock_data.ytdReturn ? (stock_data.ytdReturn * 100).toFixed(2) + '%' : 'N/A';
-  html += `<tr><td>YTD Return</td><td>${ytdReturn}</td></tr>`;
-
-  html += `<tr><td>Total Assets</td><td>${formatValue(stock_data.totalAssets)}</td></tr>`;
-  html += '</tbody></table>';
-
-  if (analysis.error) {
-    html += `<p><strong>Error:</strong> ${analysis.error}</p>`;
-  } else {
-    html += `<p><strong>Summary:</strong></p><p>${analysis.summary}</p>`;
-
-    if (analysis.fund_profile) {
-      html += '<p><strong>Fund Profile:</strong></p>';
-      html += `<p>- <strong>Category:</strong> ${analysis.fund_profile.category}</p>`;
-      html += `<p>- <strong>Expense Ratio:</strong> ${analysis.fund_profile.expense_ratio}</p>`;
-      html += `<p>- <strong>AUM Context:</strong> ${analysis.fund_profile.aum}</p>`;
-    }
-
-    html += `<p><strong>Top Holdings:</strong></p><p>${analysis.top_holdings}</p>`;
-
-    if (analysis.pros && analysis.pros.length) {
-      html += '<p><strong>Pros:</strong></p><ul>';
-      analysis.pros.forEach(pro => {
-        html += `<li>${pro}</li>`;
-      });
-      html += '</ul>';
-    }
-
-    if (analysis.cons && analysis.cons.length) {
-      html += '<p><strong>Cons:</strong></p><ul>';
-      analysis.cons.forEach(con => {
-        html += `<li>${con}</li>`;
-      });
-      html += '</ul>';
-    }
-
-    html += `<div class="recommendation">${analysis.verdict}</div>`;
+  if (stock_data.yield) {
+    const yieldPct = (stock_data.yield * 100).toFixed(2) + '%';
+    html += `<tr><td>Yield</td><td>${yieldPct}</td></tr>`;
   }
 
-  html += '</div>';
-  showResult('stock', html);
-}
-
-// ---------- Render Portfolio Analysis ----------
-function renderPortfolioAnalysis(data) {
-  const { portfolio_data, analysis } = data;
-
-  let html = '<div class="analysis-card">';
-  html += '<h2>Portfolio Analysis</h2>';
-
-  html += '<table class="stock-data-table">';
-  html += '<thead><tr><th>Ticker</th><th>Qty</th><th>Buy Price</th><th>Current Value</th><th>P&L</th><th>P&L %</th></tr></thead>';
-  html += '<tbody>';
-  portfolio_data.forEach(h => {
-    const pnl = h.pnl !== 'Not available' ? formatValue(h.pnl) : 'N/A';
-    const pnlPct = h.pnl_pct !== null ? `${formatValue(h.pnl_pct)}%` : 'N/A';
-    html += `<tr><td>${h.ticker}</td><td>${h.quantity}</td><td>${formatValue(h.buy_price)}</td><td>${formatValue(h.current_value)}</td><td>${pnl}</td><td>${pnlPct}</td></tr>`;
-  });
-  html += '</tbody></table>';
-
-  if (analysis.error) {
-    html += `<p><strong>Error:</strong> ${analysis.error}</p>`;
-  } else {
-    html += `<p><strong>Executive Summary:</strong></p><p>${analysis.executive_summary}</p>`;
-    html += `<p><strong>Diversification Assessment:</strong></p><p>${analysis.diversification_assessment}</p>`;
-
-    if (analysis.risks && analysis.risks.length) {
-      html += '<p><strong>Portfolio Risks:</strong></p><ul>';
-      analysis.risks.forEach(r => {
-        const severity = r.severity ? ` <span class="risk-${r.severity.toLowerCase()}">[${r.severity}]</span>` : '';
-        html += `<li>${r.risk}${severity}: ${r.detail}</li>`;
-      });
-      html += '</ul>';
-    }
-
-    if (analysis.top_performers && analysis.top_performers.length) {
-      html += '<p><strong>Top Performers:</strong></p><ul>';
-      analysis.top_performers.forEach(p => {
-        html += `<li><strong>${p.ticker}:</strong> ${p.reason}</li>`;
-      });
-      html += '</ul>';
-    }
-
-    if (analysis.underperformers && analysis.underperformers.length) {
-      html += '<p><strong>Underperformers:</strong></p><ul>';
-      analysis.underperformers.forEach(u => {
-        html += `<li><strong>${u.ticker}:</strong> ${u.reason} → ${u.action_suggested}</li>`;
-      });
-      html += '</ul>';
-    }
-
-    if (analysis.rebalancing_suggestions && analysis.rebalancing_suggestions.length) {
-      html += '<p><strong>Rebalancing Suggestions:</strong></p><ul>';
-      analysis.rebalancing_suggestions.forEach(s => {
-        html += `<li>${s.suggestion}: ${s.rationale}</li>`;
-      });
-      html += '</ul>';
-    }
-
-    html += `<div class="recommendation">${analysis.overall_recommendation}</div>`;
-    html += `<p><strong>Confidence:</strong> ${analysis.confidence_level}</p>`;
+  if (stock_data.ytdReturn) {
+    const ytdReturn = (stock_data.ytdReturn * 100).toFixed(2) + '%';
+    html += `<tr><td>YTD Return</td><td>${ytdReturn}</td></tr>`;
   }
 
-  html += '</div>';
-  showResult('portfolio', html);
-}
-
-// ---------- Helper Functions ----------
-function showLoading(type) {
-  document.getElementById(`${type}-loading`).classList.remove('hidden');
-  document.getElementById(`${type}-error`).classList.add('hidden');
-  document.getElementById(`${type}-result`).classList.add('hidden');
-}
-
-function showError(type, message) {
-  document.getElementById(`${type}-loading`).classList.add('hidden');
-  document.getElementById(`${type}-error`).textContent = message;
-  document.getElementById(`${type}-error`).classList.remove('hidden');
-  document.getElementById(`${type}-result`).classList.add('hidden');
-}
-
-function showResult(type, html) {
-  document.getElementById(`${type}-loading`).classList.add('hidden');
-  document.getElementById(`${type}-error`).classList.add('hidden');
-  document.getElementById(`${type}-result`).innerHTML = html;
-  document.getElementById(`${type}-result`).classList.remove('hidden');
-}
-
-function formatValue(value) {
-  if (value === null || value === undefined || value === 'Not available') {
-    return '—';
-  }
-  if (typeof value === 'number') {
-    return value.toLocaleString('en-IN', { maximumFractionDigits: 2 });
-  }
-  return value;
-}
-
-// ---------- Follow-up Chat ----------
-document.getElementById('ask-followup-btn').addEventListener('click', async () => {
-  const inputEl = document.getElementById('followup-question');
-  const question = inputEl.value.trim();
-  if (!question) return;
-
-  const historyBox = document.getElementById('stock-chat-history');
-
-  historyBox.innerHTML += `<p><strong>You:</strong> ${question}</p>`;
-  inputEl.value = '';
-
-  document.getElementById('followup-loading').classList.remove('hidden');
-
-  try {
-    const response = await fetch(`${BASE_URL}/api/ask-stock-question`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        stock_data: currentStockData,
-        analysis: currentStockAnalysis,
-        question: question
-      })
-    });
-
-    const result = await response.json();
-    document.getElementById('followup-loading').classList.add('hidden');
-
-    if (!response.ok) {
-      historyBox.innerHTML += `<p><strong>Error:</strong> ${result.error}</p>`;
-      return;
-    }
-
-    const formattedAnswer = result.answer.replace(/\n/g, '<br>');
-    historyBox.innerHTML += `<p><strong>AI:</strong> ${formattedAnswer}</p>`;
-    historyBox.scrollTop = historyBox.scrollHeight;
-
-  } catch (error) {
-    document.getElementById('followup-loading').classList.add('hidden');
-    historyBox.innerHTML += `<p><strong>Error:</strong> ${error.message}</p>`;
-  }
-});
+  if (stock_data.total
