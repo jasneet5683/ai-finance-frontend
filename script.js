@@ -240,37 +240,61 @@ function renderFundAnalysis(data) {
   html += '<tbody>';
 
   const currentPrice = stock_data.regularMarketPrice || stock_data.previousClose || stock_data.navPrice;
-  html += `<tr><td>Current Price / NAV</td><td>${formatValue(currentPrice)} ${stock_data.currency || 'INR'}</td></tr>`;
+  html += `<tr><td>Current NAV</td><td>${formatValue(currentPrice)} ${stock_data.currency || 'INR'}</td></tr>`;
 
-  if (stock_data.yield) {
-    const yieldPct = (stock_data.yield * 100).toFixed(2) + '%';
-    html += `<tr><td>Yield</td><td>${yieldPct}</td></tr>`;
+  if (stock_data.navDate && stock_data.navDate !== "N/A") {
+    html += `<tr><td>NAV Date</td><td>${stock_data.navDate}</td></tr>`;
   }
 
-  if (stock_data.ytdReturn) {
-    const ytdReturn = (stock_data.ytdReturn * 100).toFixed(2) + '%';
-    html += `<tr><td>YTD Return</td><td>${ytdReturn}</td></tr>`;
+  if (stock_data.fundHouse && stock_data.fundHouse !== "Unknown") {
+    html += `<tr><td>Fund House</td><td>${stock_data.fundHouse}</td></tr>`;
   }
 
-  if (stock_data.totalAssets) {
-    html += `<tr><td>Total Assets</td><td>${formatValue(stock_data.totalAssets)}</td></tr>`;
+  // --- NEW: Display the mstarpy data directly in the table ---
+  if (stock_data.category && stock_data.category !== "N/A") {
+    html += `<tr><td>Category</td><td>${stock_data.category}</td></tr>`;
+  }
+  
+  if (stock_data.aum && stock_data.aum !== "N/A") {
+    html += `<tr><td>AUM (Fund Size)</td><td>${stock_data.aum}</td></tr>`;
+  }
+  
+  if (stock_data.expense_ratio && stock_data.expense_ratio !== "N/A") {
+    html += `<tr><td>Expense Ratio</td><td>${stock_data.expense_ratio}</td></tr>`;
+  }
+  
+  if (stock_data['1y_return'] && stock_data['1y_return'] !== "N/A") {
+    html += `<tr><td>1-Year Return</td><td>${stock_data['1y_return']}</td></tr>`;
+  }
+  
+  if (stock_data['3y_return'] && stock_data['3y_return'] !== "N/A") {
+    html += `<tr><td>3-Year Return</td><td>${stock_data['3y_return']}</td></tr>`;
+  }
+  
+  if (stock_data.top_holdings && stock_data.top_holdings !== "N/A") {
+    html += `<tr><td>Top Holdings</td><td>${stock_data.top_holdings}</td></tr>`;
   }
   
   html += '</tbody></table>';
 
+  // --- Display the AI Analysis below the table ---
   if (analysis.error) {
     html += `<p><strong>Error:</strong> ${analysis.error}</p>`;
   } else {
-    html += `<p><strong>Summary:</strong></p><p>${analysis.summary}</p>`;
+    html += `<p><strong>AI Summary:</strong></p><p>${analysis.summary || 'No summary available'}</p>`;
 
     if (analysis.fund_profile) {
-      html += '<p><strong>Fund Profile:</strong></p>';
-      html += `<p>- <strong>Category:</strong> ${analysis.fund_profile.category}</p>`;
-      html += `<p>- <strong>Expense Ratio:</strong> ${analysis.fund_profile.expense_ratio}</p>`;
-      html += `<p>- <strong>AUM Context:</strong> ${analysis.fund_profile.aum}</p>`;
+      html += '<p><strong>AI Fund Profile:</strong></p>';
+      if (analysis.fund_profile.category) {
+        html += `<p>- <strong>Category:</strong> ${analysis.fund_profile.category}</p>`;
+      }
+      if (analysis.fund_profile.expense_ratio) {
+        html += `<p>- <strong>Expense Ratio Context:</strong> ${analysis.fund_profile.expense_ratio}</p>`;
+      }
+      if (analysis.fund_profile.aum) {
+        html += `<p>- <strong>AUM Context:</strong> ${analysis.fund_profile.aum}</p>`;
+      }
     }
-
-    html += `<p><strong>Top Holdings:</strong></p><p>${analysis.top_holdings}</p>`;
 
     if (analysis.pros && analysis.pros.length) {
       html += '<p><strong>Pros:</strong></p><ul>';
@@ -288,7 +312,9 @@ function renderFundAnalysis(data) {
       html += '</ul>';
     }
 
-    html += `<div class="recommendation">${analysis.verdict}</div>`;
+    if (analysis.verdict) {
+      html += `<div class="recommendation">${analysis.verdict}</div>`;
+    }
   }
 
   html += '</div>';
