@@ -119,19 +119,32 @@ function drawChart(chartData, assetName, currency, isMutualFund = false) {
 
     container.classList.remove('hidden');
 
+    // ... inside drawChart ...
     const dates = chartData.dates;
     const actualPrices = chartData.prices;
     
-    // Nifty data might be empty if we analyze a Stock (we'll add Nifty to stocks later)
-    const niftyPrices = chartData.benchmark_prices || new Array(dates.length).fill(null);
+    // SAFELY GET NIFTY PRICES
+    let niftyPrices = [];
+    if (chartData.benchmark_prices && chartData.benchmark_prices.length > 0) {
+        niftyPrices = chartData.benchmark_prices;
+    } else {
+        niftyPrices = new Array(dates.length).fill(null);
+    }
 
-    // --- 1. Calculate Percentage Changes for Right Chart ---
-    // Formula: ((Current - Base) / Base) * 100
-    const baseNav = actualPrices[0];
-    const baseNifty = niftyPrices.find(p => p !== null) || 1; // Find first valid Nifty price
+    // ---1. Calculate Percentage Changes ---
+    // Safely find the first non-null, non-zero price to use as the base
+    const baseNav = actualPrices.find(p => p !== null && p !== 0) || 1;
+    const baseNifty = niftyPrices.find(p => p !== null && p !== 0) || 1; 
 
-    const assetPercent = actualPrices.map(p => ((p - baseNav) / baseNav) * 100);
-    const niftyPercent = niftyPrices.map(p => p ? ((p - baseNifty) / baseNifty) * 100 : null);
+    const assetPercent = actualPrices.map(p => {
+        if (p === null || p === undefined) return null;
+        return ((p - baseNav) / baseNav) * 100;
+    });
+
+    const niftyPercent = niftyPrices.map(p => {
+        if (p === null || p === undefined) return null;
+        return ((p - baseNifty) / baseNifty) * 100;
+    });
 
     // --- 2. Destroy Old Charts to Prevent Glitches ---
     if (navChartInstance) navChartInstance.destroy();
