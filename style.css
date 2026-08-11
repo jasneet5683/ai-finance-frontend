@@ -1194,3 +1194,69 @@ header h1 {
 ::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(to bottom, var(--primary-light), var(--accent));
 }
+
+/* ── Market Ticker Bar ── */
+.ticker-wrapper {
+    width: 100%;
+    background: #0d1117;
+    border-bottom: 1px solid #30363d;
+    overflow: hidden;
+    white-space: nowrap;
+    padding: 8px 0;
+    position: sticky;
+    top: 0;
+    z-index: 999;
+}
+
+.ticker-track {
+    display: inline-flex;
+    gap: 0;
+    animation: ticker-scroll 30s linear infinite;
+    white-space: nowrap;
+}
+
+.ticker-wrapper:hover .ticker-track {
+    animation-play-state: paused; /* Pause on hover */
+}
+
+@keyframes ticker-scroll {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+}
+
+.ticker-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 32px;
+    font-size: 13px;
+    font-weight: 500;
+    border-right: 1px solid #30363d;
+    color: #e6edf3;
+}
+
+.ticker-label {
+    color: #8b949e;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.ticker-price {
+    color: #e6edf3;
+    font-weight: 600;
+}
+
+.ticker-change.up   { color: #3fb950; }
+.ticker-change.down { color: #f85149; }
+
+.ticker-loading {
+    padding: 0 20px;
+    color: #8b949e;
+    font-size: 13px;
+}
+
+.ticker-divider {
+    color: #30363d;
+    padding: 0 8px;
+}
