@@ -235,6 +235,51 @@
       </div>
     </div>
 
+    <!-- ── AI Market Advisor Floating Chat ── -->
+<div class="advisor-fab" id="advisorFab" onclick="toggleAdvisorChat()">
+    💬
+    <span class="advisor-fab-label">Market Advisor</span>
+</div>
+
+<div class="advisor-chat-container" id="advisorChat">
+    <!-- Header -->
+    <div class="advisor-chat-header">
+        <div class="advisor-header-left">
+            <div class="advisor-avatar">📊</div>
+            <div>
+                <div class="advisor-title">AI Market Advisor</div>
+                <div class="advisor-subtitle">Powered by NVIDIA</div>
+            </div>
+        </div>
+        <button class="advisor-close-btn" onclick="toggleAdvisorChat()">✕</button>
+    </div>
+
+    <!-- Messages -->
+    <div class="advisor-messages" id="advisorMessages">
+        <div class="advisor-msg bot">
+            <div class="advisor-bubble">
+                👋 Hi! I'm your personal Market Advisor.<br><br>
+                Tell me what's on your mind — are you looking to invest, 
+                explore a sector, or find stocks matching your goals?
+            </div>
+        </div>
+    </div>
+
+    <!-- Input -->
+    <div class="advisor-input-area">
+        <input 
+            type="text" 
+            id="advisorInput" 
+            class="advisor-input" 
+            placeholder="Type your message..."
+            onkeydown="if(event.key==='Enter') sendAdvisorMessage()"
+        />
+        <button class="advisor-send-btn" onclick="sendAdvisorMessage()">
+            ➤
+        </button>
+    </div>
+</div>
+
     <!-- Tab: Analyze Your Portfolio -->
     <div class="tab-content" id="analyze-portfolio">
       <div class="panel">
@@ -273,6 +318,7 @@
       }
     }
     toggleUI();
+    
 
     // Animate hero stats counters
     document.addEventListener('DOMContentLoaded', () => {
