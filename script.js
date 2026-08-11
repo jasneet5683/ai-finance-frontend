@@ -11,7 +11,9 @@
 const BASE_URL = "https://ai-financial-production.up.railway.app";
 let currentStockData = null;
 let currentStockAnalysis = null;
-let priceChartInstance = null; // Used to track and update the Chart.js instance
+//let priceChartInstance = null; // Used to track and update the Chart.js instance
+let navChartInstance = null;
+let compChartInstance = null;
 
 // ---------- Tab Switching ----------
 document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -104,10 +106,11 @@ document.getElementById('analyze-portfolio-btn').addEventListener('click', async
 });
 
 // ---------- Chart Drawing Function ----------
-function drawChart(chartData, assetName, currency) {
-    const container = document.getElementById('chart-container');
-    const ctx = document.getElementById('priceChart').getContext('2d');
+// Keep track of chart instances so we can destroy them on new searches
 
+function drawChart(chartData, assetName, currency, isMutualFund = false) {
+    const container = document.getElementById('chart-container');
+    
     // If there is no data, hide the chart container
     if (!chartData || !chartData.prices || chartData.prices.length === 0) {
         container.classList.add('hidden');
@@ -116,50 +119,107 @@ function drawChart(chartData, assetName, currency) {
 
     container.classList.remove('hidden');
 
-    // Destroy the old chart if it exists so they don't overlap
-    if (priceChartInstance) {
-        priceChartInstance.destroy();
-    }
+    const dates = chartData.dates;
+    const actualPrices = chartData.prices;
+    
+    // Nifty data might be empty if we analyze a Stock (we'll add Nifty to stocks later)
+    const niftyPrices = chartData.benchmark_prices || new Array(dates.length).fill(null);
 
-    // Create the new beautiful line chart
-    priceChartInstance = new Chart(ctx, {
+    // --- 1. Calculate Percentage Changes for Right Chart ---
+    // Formula: ((Current - Base) / Base) * 100
+    const baseNav = actualPrices[0];
+    const baseNifty = niftyPrices.find(p => p !== null) || 1; // Find first valid Nifty price
+
+    const assetPercent = actualPrices.map(p => ((p - baseNav) / baseNav) * 100);
+    const niftyPercent = niftyPrices.map(p => p ? ((p - baseNifty) / baseNifty) * 100 : null);
+
+    // --- 2. Destroy Old Charts to Prevent Glitches ---
+    if (navChartInstance) navChartInstance.destroy();
+    if (compChartInstance) compChartInstance.destroy();
+
+    // --- 3. Left Chart: Actual Price / NAV ---
+    const ctxNav = document.getElementById('navChart').getContext('2d');
+    const yAxisLabel = isMutualFund ? 'NAV' : 'Price';
+    
+    navChartInstance = new Chart(ctxNav, {
         type: 'line',
         data: {
-            labels: chartData.dates,
+            labels: dates,
             datasets: [{
-                label: `${assetName} Price (${currency || 'INR'})`,
-                data: chartData.prices,
+                label: `${yAxisLabel} (${currency || 'INR'})`,
+                data: actualPrices,
                 borderColor: '#2563eb', // Professional blue
                 backgroundColor: 'rgba(37, 99, 235, 0.1)',
                 borderWidth: 2,
-                pointRadius: 0, // Hides the dots to make the line smooth
-                pointHoverRadius: 5,
                 fill: true,
-                tension: 0.1 // Slight curve
+                pointRadius: 0, 
+                pointHoverRadius: 5,
+                tension: 0.1
             }]
         },
         options: {
             responsive: true,
-            interaction: {
-                mode: 'index',
-                intersect: false,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: { 
+                title: { display: true, text: `Actual ${yAxisLabel} Trend` },
+                legend: { display: false }
             },
-            plugins: {
-                legend: { display: false }, // Hide legend to save space
+            scales: { 
+                x: { ticks: { maxTicksLimit: 6 } },
+                y: { title: { display: true, text: `${yAxisLabel} (${currency || 'INR'})` } } 
+            }
+        }
+    });
+
+    // --- 4. Right Chart: Percentage Comparison vs Nifty 50 ---
+    const ctxComp = document.getElementById('comparisonChart').getContext('2d');
+    
+    compChartInstance = new Chart(ctxComp, {
+        type: 'line',
+        data: {
+            labels: dates,
+            datasets: [
+                {
+                    label: assetName,
+                    data: assetPercent,
+                    borderColor: '#10b981', // Green for Asset
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    pointHoverRadius: 5,
+                    tension: 0.1
+                },
+                {
+                    label: 'Nifty 50',
+                    data: niftyPercent,
+                    borderColor: '#9ca3af', // Gray for Benchmark
+                    borderDash: [5, 5],     // Dashed line!
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    pointHoverRadius: 5,
+                    tension: 0.1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: { 
+                title: { display: true, text: 'Growth vs Nifty 50 (%)' },
                 tooltip: {
                     callbacks: {
                         label: function(context) {
-                            return `Price: ${context.parsed.y.toFixed(2)} ${currency || ''}`;
+                            return context.dataset.label + ': ' + context.parsed.y.toFixed(2) + '%';
                         }
                     }
                 }
             },
-            scales: {
-                x: {
-                    display: true,
-                    ticks: { maxTicksLimit: 6 } // Only show a few dates on the X axis
-                },
-                y: { display: true }
+            scales: { 
+                x: { ticks: { maxTicksLimit: 6 } },
+                y: { 
+                    ticks: { callback: function(value) { return value + "%" } } 
+                } 
             }
         }
     });
@@ -170,7 +230,8 @@ function renderStockAnalysis(data) {
   const { stock_data, analysis, chart_data } = data;
 
   // Draw the chart!
-  drawChart(chart_data, stock_data.company_name || stock_data.ticker, stock_data.currency);
+  //drawChart(chart_data, stock_data.company_name || stock_data.ticker, stock_data.currency);
+  drawChart(data.chart_data, data.stock_data.company_name, data.stock_data.currency, false);
 
   let html = '<div class="analysis-card">';
   html += `<h3>${stock_data.company_name || stock_data.ticker}</h3>`;
@@ -230,7 +291,8 @@ function renderFundAnalysis(data) {
   const { stock_data, analysis, chart_data } = data;
 
   // Draw the chart!
-  drawChart(chart_data, stock_data.longName || stock_data.symbol, stock_data.currency || 'INR');
+  //drawChart(chart_data, stock_data.longName || stock_data.symbol, stock_data.currency || 'INR');
+  drawChart(data.chart_data, data.stock_data.longName, data.stock_data.currency, true);
 
   let html = '<div class="analysis-card">';
   html += `<h3>${stock_data.longName || stock_data.shortName || stock_data.symbol} (Mutual Fund/ETF)</h3>`;
