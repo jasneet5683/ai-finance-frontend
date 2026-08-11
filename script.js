@@ -651,7 +651,44 @@ document.getElementById('ask-followup-btn').addEventListener('click', async () =
     historyBox.innerHTML += `<p><strong>Error:</strong> ${error.message}</p>`;
   }
 });
+// ── Market Ticker ──────────────────────────────────────
+async function loadMarketTicker() {
+    try {
+        const res  = await fetch(`${API_BASE}/api/market-ticker`);
+        const data = await res.json();
 
-// Load NIFTY 50 on page load
+        if (!data.indices || data.indices.length === 0) return;
+
+        // Build items (duplicate for seamless infinite scroll)
+        const items = data.indices.map(idx => {
+            const sign      = idx.change >= 0 ? "+" : "";
+            const direction = idx.direction;
+            return `
+                <span class="ticker-item">
+                    <span class="ticker-label">${idx.emoji} ${idx.label}</span>
+                    <span class="ticker-price">${idx.closing.toLocaleString('en-IN')}</span>
+                    <span class="ticker-change ${direction}">
+                        ${sign}${idx.change} (${sign}${idx.change_pct}%)
+                    </span>
+                </span>
+            `;
+        }).join('<span class="ticker-divider">|</span>');
+
+        // Duplicate content for seamless loop
+        const track = document.getElementById('tickerTrack');
+        track.innerHTML = items + items;
+
+    } catch (err) {
+        console.error('Ticker load failed:', err);
+        document.getElementById('tickerTrack').innerHTML =
+            '<span class="ticker-loading">Market data unavailable</span>';
+    }
+}
+
+// Call on page load
 loadSectorMovers('NIFTY_50');
+document.addEventListener('DOMContentLoaded', () => {
+    loadMarketTicker();
+});
+
 
