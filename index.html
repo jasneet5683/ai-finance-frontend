@@ -194,20 +194,24 @@
         <!-- Error -->
         <div class="error hidden" id="stock-error"></div>
 
-<!-- Chart Container: Side by Side (Left: Actual Price, Right: % vs Nifty) -->
-      <div class="chart-wrapper" style="display: flex; gap: 20px; width: 100%; margin-top: 20px;">
-    
-    <!-- Left Chart: Actual NAV / Price -->
-      <div style="flex: 1; min-width: 0; background: var(--bg-secondary, #1e293b); padding: 15px; border-radius: 8px;">
-          <canvas id="navChart"></canvas>
-      </div>
-    
-    <!-- Right Chart: Percentage Comparison vs Benchmark -->
-      <div style="flex: 1; min-width: 0; background: var(--bg-secondary, #1e293b); padding: 15px; border-radius: 8px;">
-          <canvas id="comparisonChart"></canvas>
-      </div>
+        <!-- Chart Container -->
+<div id="chart-container" class="hidden mt-6 bg-white p-4 rounded-lg shadow">
+    <!-- Flex container for side-by-side charts -->
+    <div style="display: flex; gap: 20px; width: 100%; height: 350px;">
+        
+        <!-- Left Chart: Actual NAV / Price -->
+        <div style="flex: 1; min-width: 0; position: relative; height: 100%;">
+            <canvas id="navChart"></canvas>
+        </div>
+        
+        <!-- Right Chart: Percentage Comparison vs Benchmark -->
+        <div style="flex: 1; min-width: 0; position: relative; height: 100%;">
+            <canvas id="comparisonChart"></canvas>
+        </div>
+        
+    </div>
+</div>
 
-  </div>
 
         <!-- Result -->
         <div class="result hidden" id="stock-result"></div>
