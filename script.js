@@ -192,7 +192,7 @@ function drawChart(chartData, assetName, currency, isMutualFund = false) {
                 {
                     label: 'Nifty 50',
                     data: niftyPercent,
-                    borderColor: '#9ca3af', // Gray for Benchmark
+                    borderColor: '#ffffff', // Gray for Benchmark
                     borderDash: [5, 5],     // Dashed line!
                     borderWidth: 2,
                     pointRadius: 0,
