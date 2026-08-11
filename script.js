@@ -767,7 +767,7 @@ async function sendAdvisorMessage() {
     showTypingIndicator();
 
     try {
-        const res = await fetch(`${API_BASE}/api/market-advisor`, {
+        const res = await fetch(`${BASE_URL}/api/market-advisor`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ messages: advisorHistory })
