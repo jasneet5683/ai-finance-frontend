@@ -685,6 +685,137 @@ async function loadMarketTicker() {
     }
 }
 
+// ── AI Market Advisor Chat ──────────────────────────────
+const advisorHistory = []; // Stores full conversation
+
+function toggleAdvisorChat() {
+    const chat = document.getElementById('advisorChat');
+    chat.classList.toggle('open');
+    if (chat.classList.contains('open')) {
+        document.getElementById('advisorInput').focus();
+    }
+}
+
+function appendAdvisorMessage(role, text, stocks = []) {
+    const container = document.getElementById('advisorMessages');
+
+    const msgDiv = document.createElement('div');
+    msgDiv.className = `advisor-msg ${role}`;
+
+    const bubble = document.createElement('div');
+    bubble.className = 'advisor-bubble';
+    bubble.innerHTML = text.replace(/\n/g, '<br>');
+    msgDiv.appendChild(bubble);
+
+    // If stocks are provided, render clickable cards below bubble
+    if (stocks && stocks.length > 0) {
+        const listDiv = document.createElement('div');
+        listDiv.className = 'advisor-stock-list';
+
+        stocks.forEach(stock => {
+            const card = document.createElement('div');
+            card.className = 'advisor-stock-card';
+            card.innerHTML = `
+                <div>
+                    <div class="advisor-stock-symbol">📈 ${stock.symbol}</div>
+                    <div class="advisor-stock-name">${stock.name}</div>
+                    <div class="advisor-stock-reason">✦ ${stock.reason}</div>
+                </div>
+                <div class="advisor-stock-arrow">↗</div>
+            `;
+            // Click opens stock analysis in new tab
+            card.addEventListener('click', () => {
+                const url = `${window.location.origin}/?symbol=${stock.symbol}&exchange=NSE&autoanalyze=true`;
+                window.open(url, '_blank');
+            });
+            listDiv.appendChild(card);
+        });
+
+        msgDiv.appendChild(listDiv);
+    }
+
+    container.appendChild(msgDiv);
+    container.scrollTop = container.scrollHeight;
+}
+
+function showTypingIndicator() {
+    const container = document.getElementById('advisorMessages');
+    const typing = document.createElement('div');
+    typing.className = 'advisor-msg bot advisor-typing';
+    typing.id = 'advisorTyping';
+    typing.innerHTML = '<div class="advisor-bubble">⏳ Thinking...</div>';
+    container.appendChild(typing);
+    container.scrollTop = container.scrollHeight;
+}
+
+function removeTypingIndicator() {
+    const el = document.getElementById('advisorTyping');
+    if (el) el.remove();
+}
+
+async function sendAdvisorMessage() {
+    const input = document.getElementById('advisorInput');
+    const text = input.value.trim();
+    if (!text) return;
+
+    // Show user message
+    appendAdvisorMessage('user', text);
+    advisorHistory.push({ role: 'user', content: text });
+    input.value = '';
+
+    // Show typing
+    showTypingIndicator();
+
+    try {
+        const res = await fetch(`${API_BASE}/api/market-advisor`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ messages: advisorHistory })
+        });
+
+        const data = await res.json();
+        removeTypingIndicator();
+
+        if (data.error) {
+            appendAdvisorMessage('bot', '❌ Sorry, something went wrong. Please try again.');
+            return;
+        }
+
+        // Add bot reply to history
+        advisorHistory.push({ role: 'assistant', content: data.message });
+
+        // Show bot message + stock cards if any
+        appendAdvisorMessage('bot', data.message, data.stocks);
+
+    } catch (err) {
+        removeTypingIndicator();
+        appendAdvisorMessage('bot', '❌ Connection error. Please try again.');
+        console.error('Advisor error:', err);
+    }
+}
+
+// ── Auto-analyze if opened via stock card click ──────────
+window.addEventListener('DOMContentLoaded', () => {
+    const params = new URLSearchParams(window.location.search);
+    const symbol   = params.get('symbol');
+    const exchange = params.get('exchange');
+    const auto     = params.get('autoanalyze');
+
+    if (symbol && auto === 'true') {
+        // Fill in the stock input fields and trigger analysis
+        const symbolInput   = document.getElementById('stockSymbol');
+        const exchangeSelect = document.getElementById('exchangeSelect');
+        if (symbolInput)    symbolInput.value = symbol;
+        if (exchangeSelect) exchangeSelect.value = exchange || 'NSE';
+
+        // Trigger the analyze button after short delay
+        setTimeout(() => {
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            if (analyzeBtn) analyzeBtn.click();
+        }, 800);
+    }
+});
+
 // Call on page load
 loadSectorMovers('NIFTY_50');
 document.addEventListener('DOMContentLoaded', () => {
