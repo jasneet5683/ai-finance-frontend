@@ -654,7 +654,7 @@ document.getElementById('ask-followup-btn').addEventListener('click', async () =
 // ── Market Ticker ──────────────────────────────────────
 async function loadMarketTicker() {
     try {
-        const res  = await fetch(`${API_BASE}/api/market-ticker`);
+        const res  = await fetch(`${BASE_URL}/api/market-ticker`);
         const data = await res.json();
 
         if (!data.indices || data.indices.length === 0) return;
