@@ -723,11 +723,10 @@ function appendAdvisorMessage(role, text, stocks = []) {
                 </div>
                 <div class="advisor-stock-arrow">↗</div>
             `;
-            // Click opens stock analysis in new tab
-            card.addEventListener('click', () => {
-                const url = `${window.location.origin}/?symbol=${stock.symbol}&exchange=NSE&autoanalyze=true`;
-                window.open(url, '_blank');
+          card.addEventListener('click', () => {
+              analyzeStockFromAdvisor(stock.symbol);
             });
+
             listDiv.appendChild(card);
         });
 
@@ -815,6 +814,43 @@ window.addEventListener('DOMContentLoaded', () => {
         }, 800);
     }
 });
+
+function analyzeStockFromAdvisor(symbol) {
+    // 1. Close the advisor chat
+    const chat = document.getElementById('advisorChat');
+    if (chat) chat.classList.remove('open');
+
+    // 2. Switch to "Analyze an Asset" tab
+    const assetTab = document.querySelector('[data-tab="analyze-asset"]');
+    if (assetTab) assetTab.click();
+
+    // 3. Make sure Stock radio is selected
+    const stockRadio = document.getElementById('asset-stock');
+    if (stockRadio) {
+        stockRadio.checked = true;
+        toggleUI(); // show exchange dropdown
+    }
+
+    // 4. Fill symbol input
+    const symbolInput = document.getElementById('stock-symbol');
+    if (symbolInput) symbolInput.value = symbol;
+
+    // 5. Set exchange to NSE
+    const exchangeSelect = document.getElementById('stock-exchange');
+    if (exchangeSelect) exchangeSelect.value = 'NSE';
+
+    // 6. Scroll to the analyzer section
+    const analyzerSection = document.getElementById('analyze-asset');
+    if (analyzerSection) {
+        analyzerSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // 7. Trigger analysis after scroll settles
+    setTimeout(() => {
+        const analyzeBtn = document.getElementById('analyze-stock-btn');
+        if (analyzeBtn) analyzeBtn.click();
+    }, 600);
+}
 
 // Call on page load
 loadSectorMovers('NIFTY_50');
