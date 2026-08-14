@@ -30,6 +30,61 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
   });
 });
 
+// ── Autocomplete ──────────────────────────────────────────
+const symbolInput    = document.getElementById('stock-symbol');
+const suggestionBox  = document.getElementById('stock-suggestions');
+let debounceTimer    = null;
+let selectedSymbol   = null;  // stores the exact symbol user picked
+
+symbolInput.addEventListener('input', () => {
+  clearTimeout(debounceTimer);
+  selectedSymbol = null;  // reset on new typing
+
+  const query = symbolInput.value.trim();
+  if (query.length < 2) {
+    hideSuggestions();
+    return;
+  }
+
+  debounceTimer = setTimeout(() => fetchSuggestions(query), 300);
+});
+
+async function fetchSuggestions(query) {
+  try {
+    const res  = await fetch(`${BASE_URL}/api/search-stocks?q=${encodeURIComponent(query)}`);
+    const data = await res.json();
+
+    if (!data.length) { hideSuggestions(); return; }
+
+    suggestionBox.innerHTML = '';
+    data.forEach(item => {
+      const li = document.createElement('li');
+      li.innerHTML = `<span class="sug-name">${item.name}</span>
+                      <span class="sug-symbol">${item.symbol}</span>`;
+      li.addEventListener('mousedown', () => {
+        symbolInput.value = item.symbol;   // fill input with clean symbol
+        selectedSymbol    = item.symbol;
+        hideSuggestions();
+      });
+      suggestionBox.appendChild(li);
+    });
+
+    suggestionBox.classList.remove('hidden');
+  } catch (e) {
+    hideSuggestions();
+  }
+}
+
+function hideSuggestions() {
+  suggestionBox.classList.add('hidden');
+  suggestionBox.innerHTML = '';
+}
+
+// Hide when clicking outside
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.autocomplete-wrapper')) hideSuggestions();
+});
+
 // ---------- Stock & Mutual Fund Analysis ----------
 document.getElementById('analyze-stock-btn').addEventListener('click', async () => {
   const symbol = document.getElementById('stock-symbol').value.trim();
