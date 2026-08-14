@@ -227,18 +227,22 @@
           <label for="asset-fund">🏛️ Mutual Fund / ETF</label>
         </div>
 
-        <!-- Input Group -->
-        <div class="input-group">
-          <input type="text" id="stock-symbol" placeholder="Symbol / Ticker (e.g. RELIANCE, TCS)" />
-          <select id="stock-exchange">
-            <option value="NSE">NSE (India)</option>
-            <option value="BSE">BSE (India)</option>
-            <option value="NYSE">NYSE</option>
-            <option value="NASDAQ">NASDAQ</option>
-          </select>
-          <input type="text" id="stock-question" placeholder="Ask a specific question (optional)" />
-          <button class="btn btn-primary" id="analyze-stock-btn">Analyze</button>
-        </div>
+ <!-- Input Group -->
+    <div class="input-group">
+      <div class="autocomplete-wrapper">
+      <input type="text" id="stock-symbol" placeholder="Company name or Symbol (e.g. Infosys, TCS)" autocomplete="off" />
+      <ul class="autocomplete-dropdown hidden" id="stock-suggestions"></ul>
+    </div>
+      <select id="stock-exchange">
+        <option value="NSE">NSE (India)</option>
+        <option value="BSE">BSE (India)</option>
+        <option value="NYSE">NYSE</option>
+        <option value="NASDAQ">NASDAQ</option>
+    </select>
+    <input type="text" id="stock-question" placeholder="Ask a specific question (optional)" />
+        <button class="btn btn-primary" id="analyze-stock-btn">Analyze</button>
+    </div>
+
 
         <!-- Loading -->
         <div class="loading hidden" id="stock-loading">⏳ Fetching data and analysis...</div>
