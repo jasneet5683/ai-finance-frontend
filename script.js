@@ -136,142 +136,260 @@ document.getElementById('analyze-stock-btn').addEventListener('click', async () 
 });
 
 // ---------- Portfolio Analysis ----------
-// ── Portfolio Auth ────────────────────────────────────────
+
+// ── Portfolio Auth ──────────────────────────────────────────────────────────
 const PORTFOLIO_TOKEN_KEY = 'portfolio_jwt';
 
-function getPortfolioToken() {
-  return localStorage.getItem(PORTFOLIO_TOKEN_KEY);
-}
+function getPortfolioToken() { return localStorage.getItem(PORTFOLIO_TOKEN_KEY); }
 
 function isPortfolioUnlocked() {
-  const token = getPortfolioToken();
-  if (!token) return false;
-  try {
-    // Decode payload (no verification — server verifies on each request)
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    return payload.exp * 1000 > Date.now();
-  } catch {
-    return false;
-  }
+    const token = getPortfolioToken();
+    if (!token) return false;
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        return payload.exp * 1000 > Date.now();
+    } catch { return false; }
 }
 
 function showPortfolioUnlocked() {
-  document.getElementById('portfolio-locked').classList.add('hidden');
-  document.getElementById('portfolio-unlocked').classList.remove('hidden');
+    document.getElementById('portfolio-locked').classList.add('hidden');
+    document.getElementById('portfolio-unlocked').classList.remove('hidden');
 }
 
 function showPortfolioLocked() {
-  document.getElementById('portfolio-locked').classList.remove('hidden');
-  document.getElementById('portfolio-unlocked').classList.add('hidden');
-  localStorage.removeItem(PORTFOLIO_TOKEN_KEY);
+    document.getElementById('portfolio-locked').classList.remove('hidden');
+    document.getElementById('portfolio-unlocked').classList.add('hidden');
+    localStorage.removeItem(PORTFOLIO_TOKEN_KEY);
 }
 
 // Check on tab switch
 document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    if (btn.dataset.tab === 'analyze-portfolio') {
-      if (isPortfolioUnlocked()) {
-        showPortfolioUnlocked();
-      } else {
-        showPortfolioLocked();
-      }
-    }
-  });
+    btn.addEventListener('click', () => {
+        if (btn.dataset.tab === 'analyze-portfolio') {
+            if (isPortfolioUnlocked()) showPortfolioUnlocked();
+            else showPortfolioLocked();
+        }
+    });
 });
 
 // Unlock button → show modal
 document.getElementById('unlock-portfolio-btn').addEventListener('click', () => {
-  document.getElementById('portfolio-modal').classList.remove('hidden');
-  document.getElementById('portfolio-password').value = '';
-  document.getElementById('modal-error').classList.add('hidden');
-  setTimeout(() => document.getElementById('portfolio-password').focus(), 100);
+    document.getElementById('portfolio-modal').classList.remove('hidden');
+    document.getElementById('portfolio-password').value = '';
+    document.getElementById('modal-error').classList.add('hidden');
+    setTimeout(() => document.getElementById('portfolio-password').focus(), 100);
 });
 
-// Cancel modal
 document.getElementById('modal-cancel-btn').addEventListener('click', () => {
-  document.getElementById('portfolio-modal').classList.add('hidden');
+    document.getElementById('portfolio-modal').classList.add('hidden');
 });
 
-// Allow Enter key in password field
 document.getElementById('portfolio-password').addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') document.getElementById('modal-login-btn').click();
+    if (e.key === 'Enter') document.getElementById('modal-login-btn').click();
 });
 
-// Login button
+// Login
 document.getElementById('modal-login-btn').addEventListener('click', async () => {
-  const password = document.getElementById('portfolio-password').value;
-  const btn = document.getElementById('modal-login-btn');
-
-  if (!password) return;
-
-  btn.textContent = 'Verifying...';
-  btn.disabled = true;
-
-  try {
-    const res = await fetch(`${BASE_URL}/api/portfolio-login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password })
-    });
-
-    const data = await res.json();
-
-    if (res.ok && data.token) {
-      localStorage.setItem(PORTFOLIO_TOKEN_KEY, data.token);
-      document.getElementById('portfolio-modal').classList.add('hidden');
-      showPortfolioUnlocked();
-    } else {
-      document.getElementById('modal-error').classList.remove('hidden');
+    const password = document.getElementById('portfolio-password').value.trim();
+    if (!password) return;
+    try {
+        const res = await fetch(`${BASE_URL}/api/portfolio-auth`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password })
+        });
+        const data = await res.json();
+        if (res.ok && data.token) {
+            localStorage.setItem(PORTFOLIO_TOKEN_KEY, data.token);
+            document.getElementById('portfolio-modal').classList.add('hidden');
+            showPortfolioUnlocked();
+        } else {
+            document.getElementById('modal-error').classList.remove('hidden');
+        }
+    } catch (e) {
+        document.getElementById('modal-error').classList.remove('hidden');
     }
-  } catch (e) {
-    document.getElementById('modal-error').textContent = 'Connection error. Try again.';
-    document.getElementById('modal-error').classList.remove('hidden');
-  } finally {
-    btn.textContent = 'Unlock';
-    btn.disabled = false;
-  }
 });
 
 // Lock button
-document.getElementById('portfolio-logout-btn').addEventListener('click', () => {
-  showPortfolioLocked();
+document.getElementById('lock-portfolio-btn').addEventListener('click', () => {
+    showPortfolioLocked();
 });
 
-// ── Portfolio Analysis (now with JWT header) ──────────────
-document.getElementById('analyze-portfolio-btn').addEventListener('click', async () => {
-  const question = document.getElementById('portfolio-question').value.trim();
-  const token = getPortfolioToken();
+// ── Load Holdings ──────────────────────────────────────────────────────────
+document.getElementById('load-holdings-btn').addEventListener('click', loadHoldings);
 
-  if (!token) { showPortfolioLocked(); return; }
+async function loadHoldings() {
+    const token = getPortfolioToken();
+    document.getElementById('holdings-loading').classList.remove('hidden');
+    document.getElementById('equity-holdings-section').classList.add('hidden');
+    document.getElementById('funds-holdings-section').classList.add('hidden');
+    document.getElementById('portfolio-summary-cards').classList.add('hidden');
+    document.getElementById('portfolio-analyze-section').classList.add('hidden');
 
-  showLoading('portfolio');
-  try {
-    const response = await fetch(`${BASE_URL}/api/analyze-portfolio`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`       // ← JWT sent here
-      },
-      body: JSON.stringify({ question: question || undefined })
+    try {
+        const res = await fetch(`${BASE_URL}/api/portfolio-data`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+            alert(data.message || 'Failed to load holdings.');
+            return;
+        }
+
+        renderEquityTable(data.equity || []);
+        renderFundsTable(data.mutual_funds || []);
+        renderSummaryCards(data.equity || [], data.mutual_funds || []);
+
+        document.getElementById('portfolio-summary-cards').classList.remove('hidden');
+        document.getElementById('portfolio-analyze-section').classList.remove('hidden');
+
+    } catch (e) {
+        alert('Error loading holdings: ' + e.message);
+    } finally {
+        document.getElementById('holdings-loading').classList.add('hidden');
+    }
+}
+
+function renderSummaryCards(equity, funds) {
+    document.getElementById('summary-stock-count').textContent = equity.length;
+    document.getElementById('summary-fund-count').textContent = funds.length;
+
+    const equityInvested = equity.reduce((sum, h) => {
+        const val = (h.purchase_price || 0) * (h.quantity || 0);
+        return sum + val;
+    }, 0);
+
+    const mfInvested = funds.reduce((sum, f) => sum + (f.amount_invested || 0), 0);
+
+    document.getElementById('summary-equity-invested').textContent =
+        equityInvested > 0 ? '₹' + equityInvested.toLocaleString('en-IN', { maximumFractionDigits: 0 }) : '—';
+    document.getElementById('summary-mf-invested').textContent =
+        mfInvested > 0 ? '₹' + mfInvested.toLocaleString('en-IN', { maximumFractionDigits: 0 }) : '—';
+}
+
+function renderEquityTable(holdings) {
+    const tbody = document.getElementById('equity-table-body');
+    tbody.innerHTML = '';
+
+    if (!holdings.length) {
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:var(--text-muted);padding:20px;">No equity holdings found.</td></tr>`;
+        document.getElementById('equity-holdings-section').classList.remove('hidden');
+        return;
+    }
+
+    holdings.forEach(h => {
+        const buyPrice   = h.purchase_price || 0;
+        const currPrice  = h.current_price  || 0;
+        const qty        = h.quantity        || 0;
+        const invested   = buyPrice * qty;
+        const currVal    = currPrice * qty;
+        const pnl        = currPrice ? currVal - invested : null;
+        const pnlPct     = (pnl !== null && invested) ? (pnl / invested * 100) : null;
+
+        let pnlHtml = '<span class="pnl-neutral">—</span>';
+        if (pnl !== null) {
+            const cls   = pnl >= 0 ? 'pnl-positive' : 'pnl-negative';
+            const sign  = pnl >= 0 ? '+' : '';
+            pnlHtml = `<span class="${cls}">${sign}₹${Math.abs(pnl).toLocaleString('en-IN', {maximumFractionDigits:0})} (${sign}${pnlPct.toFixed(1)}%)</span>`;
+        }
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><span class="symbol-badge">${h.symbol}</span></td>
+            <td>${h.company_name || '—'}</td>
+            <td>${h.sector || '—'}</td>
+            <td>${h.broker || '—'}</td>
+            <td>${qty}</td>
+            <td>${buyPrice ? '₹' + buyPrice.toLocaleString('en-IN') : '—'}</td>
+            <td>${currPrice ? '₹' + currPrice.toLocaleString('en-IN') : '—'}</td>
+            <td>${pnlHtml}</td>
+            <td style="color:var(--text-muted);font-size:0.8rem;">${h.notes || '—'}</td>
+        `;
+        tbody.appendChild(row);
     });
 
-    if (response.status === 401) {
-      showPortfolioLocked();
-      return;
+    document.getElementById('equity-holdings-section').classList.remove('hidden');
+}
+
+function renderFundsTable(funds) {
+    const tbody = document.getElementById('funds-table-body');
+    tbody.innerHTML = '';
+
+    if (!funds.length) {
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:var(--text-muted);padding:20px;">No mutual fund holdings found.</td></tr>`;
+        document.getElementById('funds-holdings-section').classList.remove('hidden');
+        return;
     }
 
-    const data = await response.json();
-    if (!response.ok) {
-      showError('portfolio', data.error || 'Failed to analyze portfolio');
-      return;
+    funds.forEach(f => {
+        const nav      = f.current_nav     || 0;
+        const units    = f.units_purchased || 0;
+        const invested = f.amount_invested || 0;
+        const currVal  = nav && units ? nav * units : null;
+        const pnl      = currVal ? currVal - invested : null;
+
+        let currValHtml = '—';
+        if (currVal) {
+            const cls  = pnl >= 0 ? 'pnl-positive' : 'pnl-negative';
+            const sign = pnl >= 0 ? '+' : '';
+            currValHtml = `<span class="${cls}">₹${currVal.toLocaleString('en-IN', {maximumFractionDigits:0})}<br><small>${sign}₹${Math.abs(pnl).toLocaleString('en-IN',{maximumFractionDigits:0})}</small></span>`;
+        }
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td style="max-width:200px;white-space:normal;">${f.fund_name}</td>
+            <td>${f.amc || '—'}</td>
+            <td>${f.fund_type || '—'}</td>
+            <td>${invested ? '₹' + invested.toLocaleString('en-IN') : '—'}</td>
+            <td>${units || '—'}</td>
+            <td>${nav ? '₹' + nav : '—'}</td>
+            <td>${currValHtml}</td>
+            <td>${f.sip_amount ? '₹' + f.sip_amount.toLocaleString('en-IN') : '—'}</td>
+            <td>${f.expense_ratio ? f.expense_ratio + '%' : '—'}</td>
+        `;
+        tbody.appendChild(row);
+    });
+
+    document.getElementById('funds-holdings-section').classList.remove('hidden');
+}
+
+// ── Analyze Portfolio ──────────────────────────────────────────────────────
+
+// Both buttons (top-level and below holdings) trigger same function
+document.getElementById('analyze-portfolio-btn').addEventListener('click', runPortfolioAnalysis);
+document.getElementById('analyze-portfolio-btn-2').addEventListener('click', runPortfolioAnalysis);
+
+async function runPortfolioAnalysis() {
+    const token    = getPortfolioToken();
+    const question = document.getElementById('portfolio-question')?.value.trim() || '';
+
+    showLoading('portfolio');
+
+    try {
+        const res = await fetch(`${BASE_URL}/api/analyze-portfolio`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ question: question || undefined })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            showError('portfolio', data.error || 'Analysis failed.');
+            return;
+        }
+
+        renderPortfolioAnalysis(data);
+
+    } catch (e) {
+        showError('portfolio', 'Error: ' + e.message);
     }
-
-    renderPortfolioAnalysis(data);
-  } catch (error) {
-    showError('portfolio', `Error: ${error.message}`);
-  }
-});
-
+}
 
 // ---------- Chart Drawing Function ----------
 // Keep track of chart instances so we can destroy them on new searches
