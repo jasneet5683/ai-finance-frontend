@@ -297,23 +297,110 @@
     </div>
   </div>
 
-  <div class="panel hidden" id="portfolio-unlocked">
-    <h2>Analyze Your Portfolio</h2>
-    <div class="input-group">
-      <input type="text" id="portfolio-question" placeholder="Ask about your portfolio (optional)" />
-      <button class="btn btn-primary" id="analyze-portfolio-btn">Analyze Portfolio</button>
-      <button class="btn btn-secondary" id="portfolio-logout-btn">🔒 Lock</button>
+  <div id="portfolio-unlocked" class="hidden">
+
+    <!-- Top Actions -->
+    <div class="portfolio-actions">
+        <button id="load-holdings-btn" class="btn btn-secondary">🔄 Load Holdings</button>
+        <button id="analyze-portfolio-btn" class="btn btn-primary">📊 Analyze Portfolio</button>
+        <button id="lock-portfolio-btn" class="btn btn-ghost">🔒 Lock</button>
     </div>
 
-    <!-- Loading -->
-    <div class="loading hidden" id="portfolio-loading">⏳ Fetching portfolio and analysis...</div>
+    <!-- Summary Cards -->
+    <div id="portfolio-summary-cards" class="portfolio-summary-cards hidden">
+        <div class="summary-card">
+            <span class="summary-label">Total Stocks</span>
+            <span class="summary-value" id="summary-stock-count">—</span>
+        </div>
+        <div class="summary-card">
+            <span class="summary-label">Total Funds</span>
+            <span class="summary-value" id="summary-fund-count">—</span>
+        </div>
+        <div class="summary-card">
+            <span class="summary-label">Total Invested (Equity)</span>
+            <span class="summary-value" id="summary-equity-invested">—</span>
+        </div>
+        <div class="summary-card">
+            <span class="summary-label">Total Invested (MF)</span>
+            <span class="summary-value" id="summary-mf-invested">—</span>
+        </div>
+    </div>
 
-    <!-- Error -->
-    <div class="error hidden" id="portfolio-error"></div>
+    <!-- Holdings Loading -->
+    <div id="holdings-loading" class="loading-state hidden">
+        <div class="loading-spinner"></div>
+        <p>⏳ Loading your holdings...</p>
+    </div>
 
-    <!-- Result -->
-    <div class="result hidden" id="portfolio-result"></div>
-  </div>
+    <!-- Equity Holdings Table -->
+    <div id="equity-holdings-section" class="holdings-section hidden">
+        <h3 class="holdings-title">📈 Equity Holdings</h3>
+        <div class="table-wrapper">
+            <table class="holdings-table">
+                <thead>
+                    <tr>
+                        <th>Symbol</th>
+                        <th>Company</th>
+                        <th>Sector</th>
+                        <th>Broker</th>
+                        <th>Qty</th>
+                        <th>Buy Price</th>
+                        <th>Current Price</th>
+                        <th>P&L</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody id="equity-table-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Mutual Funds Holdings Table -->
+    <div id="funds-holdings-section" class="holdings-section hidden">
+        <h3 class="holdings-title">🏛️ Mutual Fund Holdings</h3>
+        <div class="table-wrapper">
+            <table class="holdings-table">
+                <thead>
+                    <tr>
+                        <th>Fund Name</th>
+                        <th>AMC</th>
+                        <th>Type</th>
+                        <th>Invested</th>
+                        <th>Units</th>
+                        <th>NAV</th>
+                        <th>Current Value</th>
+                        <th>SIP Amount</th>
+                        <th>Expense Ratio</th>
+                    </tr>
+                </thead>
+                <tbody id="funds-table-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Optional question + Analyze -->
+    <div id="portfolio-analyze-section" class="portfolio-analyze-section hidden">
+        <div class="input-group">
+            <input type="text" id="portfolio-question"
+                   placeholder="Optional: Ask something specific e.g. 'Am I over-exposed to banking?'"
+                   class="input-field" />
+        </div>
+        <div class="portfolio-actions" style="margin-top: 12px;">
+            <button id="analyze-portfolio-btn-2" class="btn btn-primary">📊 Analyze with AI</button>
+        </div>
+    </div>
+
+    <!-- Analysis Loading -->
+    <div id="portfolio-loading" class="loading-state hidden">
+        <div class="loading-spinner"></div>
+        <p>⏳ Fetching portfolio and analysis...</p>
+    </div>
+
+    <!-- Analysis Result -->
+    <div id="portfolio-result"></div>
+
+</div>
+
 </div>
 
 
