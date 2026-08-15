@@ -365,7 +365,8 @@ async function runPortfolioAnalysis() {
     const token    = getPortfolioToken();
     const question = document.getElementById('portfolio-question')?.value.trim() || '';
 
-    showLoading('portfolio');
+    document.getElementById('portfolio-loading').classList.remove('hidden');
+    document.getElementById('portfolio-result').innerHTML = '';
 
     try {
         const res = await fetch(`${BASE_URL}/api/analyze-portfolio`, {
@@ -378,16 +379,20 @@ async function runPortfolioAnalysis() {
         });
 
         const data = await res.json();
+        document.getElementById('portfolio-loading').classList.add('hidden');
 
         if (!res.ok) {
-            showError('portfolio', data.error || 'Analysis failed.');
+            document.getElementById('portfolio-result').innerHTML =
+                `<p style="color:var(--danger);">${data.error || 'Analysis failed.'}</p>`;
             return;
         }
 
         renderPortfolioAnalysis(data);
 
     } catch (e) {
-        showError('portfolio', 'Error: ' + e.message);
+        document.getElementById('portfolio-loading').classList.add('hidden');
+        document.getElementById('portfolio-result').innerHTML =
+            `<p style="color:var(--danger);">Error: ${e.message}</p>`;
     }
 }
 
