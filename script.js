@@ -748,7 +748,13 @@ function renderPortfolioAnalysis(data) {
   }
 
   html += '</div>';
-  showResult('portfolio', html);
+  const resultEl = document.getElementById('portfolio-result');
+if (resultEl) {
+    resultEl.innerHTML = html;
+    resultEl.classList.remove('hidden');
+}
+const loadingEl = document.getElementById('portfolio-loading');
+if (loadingEl) loadingEl.classList.add('hidden');
 }
 
 // ---------- Helper Functions ----------
