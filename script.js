@@ -136,19 +136,131 @@ document.getElementById('analyze-stock-btn').addEventListener('click', async () 
 });
 
 // ---------- Portfolio Analysis ----------
+// ── Portfolio Auth ────────────────────────────────────────
+const PORTFOLIO_TOKEN_KEY = 'portfolio_jwt';
+
+function getPortfolioToken() {
+  return localStorage.getItem(PORTFOLIO_TOKEN_KEY);
+}
+
+function isPortfolioUnlocked() {
+  const token = getPortfolioToken();
+  if (!token) return false;
+  try {
+    // Decode payload (no verification — server verifies on each request)
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.exp * 1000 > Date.now();
+  } catch {
+    return false;
+  }
+}
+
+function showPortfolioUnlocked() {
+  document.getElementById('portfolio-locked').classList.add('hidden');
+  document.getElementById('portfolio-unlocked').classList.remove('hidden');
+}
+
+function showPortfolioLocked() {
+  document.getElementById('portfolio-locked').classList.remove('hidden');
+  document.getElementById('portfolio-unlocked').classList.add('hidden');
+  localStorage.removeItem(PORTFOLIO_TOKEN_KEY);
+}
+
+// Check on tab switch
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (btn.dataset.tab === 'analyze-portfolio') {
+      if (isPortfolioUnlocked()) {
+        showPortfolioUnlocked();
+      } else {
+        showPortfolioLocked();
+      }
+    }
+  });
+});
+
+// Unlock button → show modal
+document.getElementById('unlock-portfolio-btn').addEventListener('click', () => {
+  document.getElementById('portfolio-modal').classList.remove('hidden');
+  document.getElementById('portfolio-password').value = '';
+  document.getElementById('modal-error').classList.add('hidden');
+  setTimeout(() => document.getElementById('portfolio-password').focus(), 100);
+});
+
+// Cancel modal
+document.getElementById('modal-cancel-btn').addEventListener('click', () => {
+  document.getElementById('portfolio-modal').classList.add('hidden');
+});
+
+// Allow Enter key in password field
+document.getElementById('portfolio-password').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') document.getElementById('modal-login-btn').click();
+});
+
+// Login button
+document.getElementById('modal-login-btn').addEventListener('click', async () => {
+  const password = document.getElementById('portfolio-password').value;
+  const btn = document.getElementById('modal-login-btn');
+
+  if (!password) return;
+
+  btn.textContent = 'Verifying...';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch(`${BASE_URL}/api/portfolio-login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password })
+    });
+
+    const data = await res.json();
+
+    if (res.ok && data.token) {
+      localStorage.setItem(PORTFOLIO_TOKEN_KEY, data.token);
+      document.getElementById('portfolio-modal').classList.add('hidden');
+      showPortfolioUnlocked();
+    } else {
+      document.getElementById('modal-error').classList.remove('hidden');
+    }
+  } catch (e) {
+    document.getElementById('modal-error').textContent = 'Connection error. Try again.';
+    document.getElementById('modal-error').classList.remove('hidden');
+  } finally {
+    btn.textContent = 'Unlock';
+    btn.disabled = false;
+  }
+});
+
+// Lock button
+document.getElementById('portfolio-logout-btn').addEventListener('click', () => {
+  showPortfolioLocked();
+});
+
+// ── Portfolio Analysis (now with JWT header) ──────────────
 document.getElementById('analyze-portfolio-btn').addEventListener('click', async () => {
   const question = document.getElementById('portfolio-question').value.trim();
+  const token = getPortfolioToken();
+
+  if (!token) { showPortfolioLocked(); return; }
 
   showLoading('portfolio');
   try {
     const response = await fetch(`${BASE_URL}/api/analyze-portfolio`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`       // ← JWT sent here
+      },
       body: JSON.stringify({ question: question || undefined })
     });
 
-    const data = await response.json();
+    if (response.status === 401) {
+      showPortfolioLocked();
+      return;
+    }
 
+    const data = await response.json();
     if (!response.ok) {
       showError('portfolio', data.error || 'Failed to analyze portfolio');
       return;
@@ -159,6 +271,7 @@ document.getElementById('analyze-portfolio-btn').addEventListener('click', async
     showError('portfolio', `Error: ${error.message}`);
   }
 });
+
 
 // ---------- Chart Drawing Function ----------
 // Keep track of chart instances so we can destroy them on new searches
