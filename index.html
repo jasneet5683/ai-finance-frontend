@@ -286,28 +286,53 @@
     </div>
 
 
-    <!-- Tab: Analyze Your Portfolio -->
-    <div class="tab-content" id="analyze-portfolio">
-      <div class="panel">
-        <h2>Analyze Your Portfolio</h2>
+   <!-- Tab: Analyze Your Portfolio -->
+<div class="tab-content" id="analyze-portfolio">
+  <div class="panel" id="portfolio-locked">
+    <div class="locked-placeholder">
+      <div class="lock-icon">🔒</div>
+      <h2>Portfolio is Protected</h2>
+      <p>Click below to unlock your personal portfolio.</p>
+      <button class="btn btn-primary" id="unlock-portfolio-btn">Unlock Portfolio</button>
+    </div>
+  </div>
 
-        <div class="input-group">
-          <input type="text" id="portfolio-question" placeholder="Ask about your portfolio (optional)" />
-          <button class="btn btn-primary" id="analyze-portfolio-btn">Analyze Portfolio</button>
-        </div>
-
-        <!-- Loading -->
-        <div class="loading hidden" id="portfolio-loading">⏳ Fetching portfolio and analysis...</div>
-
-        <!-- Error -->
-        <div class="error hidden" id="portfolio-error"></div>
-
-        <!-- Result -->
-        <div class="result hidden" id="portfolio-result"></div>
-      </div>
+  <div class="panel hidden" id="portfolio-unlocked">
+    <h2>Analyze Your Portfolio</h2>
+    <div class="input-group">
+      <input type="text" id="portfolio-question" placeholder="Ask about your portfolio (optional)" />
+      <button class="btn btn-primary" id="analyze-portfolio-btn">Analyze Portfolio</button>
+      <button class="btn btn-secondary" id="portfolio-logout-btn">🔒 Lock</button>
     </div>
 
+    <!-- Loading -->
+    <div class="loading hidden" id="portfolio-loading">⏳ Fetching portfolio and analysis...</div>
+
+    <!-- Error -->
+    <div class="error hidden" id="portfolio-error"></div>
+
+    <!-- Result -->
+    <div class="result hidden" id="portfolio-result"></div>
   </div>
+</div>
+
+
+  </div>
+
+  <!-- Portfolio Login Modal -->
+<div class="modal-overlay hidden" id="portfolio-modal">
+  <div class="modal-box">
+    <div class="modal-icon">🔐</div>
+    <h3>Portfolio Access</h3>
+    <p>This section is private. Enter your password to continue.</p>
+    <input type="password" id="portfolio-password" placeholder="Enter password" autocomplete="off" />
+    <div class="modal-error hidden" id="modal-error">Incorrect password. Try again.</div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" id="modal-login-btn">Unlock</button>
+      <button class="btn btn-secondary" id="modal-cancel-btn">Cancel</button>
+    </div>
+  </div>
+</div>
 
   <script src="script.js"></script>
   <script>
