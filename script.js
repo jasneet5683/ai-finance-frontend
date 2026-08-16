@@ -8,8 +8,8 @@
  * - Chart.js interactive graphs
  */
 
-//const BASE_URL = "https://api.finance.jasneet.uk";
-const BASE_URL = "https://ai-financial-production.up.railway.app";
+const BASE_URL = "http://api.finance.jasneet.uk";
+//const BASE_URL_old = "https://ai-financial-production.up.railway.app";
 let currentStockData = null;
 let currentStockAnalysis = null;
 //let priceChartInstance = null; // Used to track and update the Chart.js instance
